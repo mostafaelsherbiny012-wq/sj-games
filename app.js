@@ -597,23 +597,32 @@ class SJGames {
         const container = document.getElementById('players-list');
         if (!this.roomData || !this.roomData.players) return;
 
-        container.innerHTML = this.roomData.players.map(player => `
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px;">
-                <img src="${player.photoURL || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234d96ff%22/%3E%3Ctext x=%2235%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E${player.name?.[0] || 'P'}%3C/text%3E%3C/svg%3E'}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--glass-border); object-fit: cover;">
-                <span style="font-weight: 500;">${player.name}</span>
-                ${player.uid === this.roomData.adminId ? '<span style="font-size: 11px; padding: 2px 10px; border-radius: 20px; background: var(--neon-yellow); color: #1a1a2e; font-weight: 700;">👑 مشرف</span>' : ''}
-                <span style="margin-right: auto; font-size: 12px; color: var(--neon-green);">🟢 متصل</span>
-                <span style="font-size: 12px; color: var(--text-secondary);">🏆 ${player.score || 0}</span>
-            </div>
-        `).join('');
+        let html = '';
+        this.roomData.players.forEach(player => {
+            const initial = player.name ? player.name[0] : 'P';
+            html += `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                    <img src="${player.photoURL || ''}" 
+                         style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--glass-border); object-fit: cover;"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234d96ff%22/%3E%3Ctext x=%2235%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E${initial}%3C/text%3E%3C/svg%3E'">
+                    <span style="font-weight: 500;">${player.name}</span>
+                    ${player.uid === this.roomData.adminId ? '<span style="font-size: 11px; padding: 2px 10px; border-radius: 20px; background: var(--neon-yellow); color: #1a1a2e; font-weight: 700;">👑 مشرف</span>' : ''}
+                    <span style="margin-right: auto; font-size: 12px; color: var(--neon-green);">🟢 متصل</span>
+                    <span style="font-size: 12px; color: var(--text-secondary);">🏆 ${player.score || 0}</span>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
     }
 
     updateAdminControls() {
         const controls = document.getElementById('admin-controls');
-        if (this.isAdmin && this.roomData) {
-            controls.style.display = 'flex';
-        } else {
-            controls.style.display = 'none';
+        if (controls) {
+            if (this.isAdmin && this.roomData) {
+                controls.style.display = 'flex';
+            } else {
+                controls.style.display = 'none';
+            }
         }
     }
 
@@ -780,6 +789,8 @@ class SJGames {
 
     renderLocalGame() {
         const area = document.getElementById('game-area');
+        if (!area) return;
+        
         const player = this.localGame.players[this.localGame.currentPlayer];
         
         area.innerHTML = `
@@ -804,14 +815,16 @@ class SJGames {
 
         // Update players list
         const container = document.getElementById('players-list');
-        container.innerHTML = this.localGame.players.map((p, i) => `
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; ${i === this.localGame.currentPlayer ? 'border: 2px solid var(--neon-yellow);' : ''}">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--neon-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">${p.name[0]}</div>
-                <span style="font-weight: 500;">${p.name}</span>
-                ${i === this.localGame.currentPlayer ? '<span style="color: var(--neon-yellow);">🎯 دوره</span>' : ''}
-                <span style="margin-right: auto; font-size: 12px; color: var(--text-secondary);">🏆 ${p.score}</span>
-            </div>
-        `).join('');
+        if (container) {
+            container.innerHTML = this.localGame.players.map((p, i) => `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; ${i === this.localGame.currentPlayer ? 'border: 2px solid var(--neon-yellow);' : ''}">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--neon-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">${p.name[0]}</div>
+                    <span style="font-weight: 500;">${p.name}</span>
+                    ${i === this.localGame.currentPlayer ? '<span style="color: var(--neon-yellow);">🎯 دوره</span>' : ''}
+                    <span style="margin-right: auto; font-size: 12px; color: var(--text-secondary);">🏆 ${p.score}</span>
+                </div>
+            `).join('');
+        }
     }
 
     getLocalGameTitle() {
@@ -916,9 +929,12 @@ class SJGames {
     // ===== Profile =====
     async loadUserProfile() {
         if (!this.currentUser) return;
-        document.getElementById('profile-avatar').src = this.currentUser.photoURL || '';
-        document.getElementById('profile-name').textContent = this.currentUser.displayName || 'مستخدم';
-        document.getElementById('profile-email').textContent = this.currentUser.email || '';
+        const avatar = document.getElementById('profile-avatar');
+        const name = document.getElementById('profile-name');
+        const email = document.getElementById('profile-email');
+        if (avatar) avatar.src = this.currentUser.photoURL || '';
+        if (name) name.textContent = this.currentUser.displayName || 'مستخدم';
+        if (email) email.textContent = this.currentUser.email || '';
     }
 
     // ===== Rooms Loading =====
@@ -1051,7 +1067,6 @@ class SJGames {
 
     // ===== Game Data =====
     loadGameData() {
-        // Load from JSON files
         fetch('database/sinojem.json').catch(() => console.log('Using default data'));
         fetch('database/without-words.json').catch(() => console.log('Using default data'));
         fetch('database/who-am-i.json').catch(() => console.log('Using default data'));
