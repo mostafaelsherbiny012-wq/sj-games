@@ -771,4 +771,316 @@ class SJGames {
         
         document.getElementById('room-title').textContent = '🎮 لعب عن قرب';
         document.getElementById('room-code-display').textContent = 'LOCAL';
-        document.getElementById('room-status-badge').textContent = 'جاري الل
+        document.getElementById('room-status-badge').textContent = 'جاري اللعب';
+        document.getElementById('room-status-badge').style.background = 'var(--neon-yellow)';
+        document.getElementById('admin-controls').style.display = 'none';
+
+        this.renderLocalGame();
+    }
+
+    renderLocalGame() {
+        const area = document.getElementById('game-area');
+        const player = this.localGame.players[this.localGame.currentPlayer];
+        
+        area.innerHTML = `
+            <div style="text-align: center; width: 100%;">
+                <h3>🎮 ${this.getLocalGameTitle()}</h3>
+                <div class="card" style="margin: 16px 0;">
+                    <p style="color: var(--neon-yellow);">دور: ${player.name}</p>
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 16px 0;">
+                        <button class="btn btn-success" onclick="window.app.localCorrect()">✅ صحيحة</button>
+                        <button class="btn btn-danger" onclick="window.app.localWrong()">❌ خاطئة</button>
+                        <button class="btn btn-warning" onclick="window.app.localSkip()">⏭️ تخطي</button>
+                    </div>
+                    ${this.getLocalGameContent()}
+                </div>
+                <div style="display: flex; justify-content: space-between; color: var(--text-secondary);">
+                    <span>👥 ${this.localGame.players.length} لاعبين</span>
+                    <span>🏆 ${this.localGame.players.map(p => `${p.name}: ${p.score}`).join(' | ')}</span>
+                </div>
+                <button class="btn btn-outline" onclick="window.app.endLocalGame()" style="margin-top: 16px;">🚪 إنهاء اللعبة</button>
+            </div>
+        `;
+
+        // Update players list
+        const container = document.getElementById('players-list');
+        container.innerHTML = this.localGame.players.map((p, i) => `
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; ${i === this.localGame.currentPlayer ? 'border: 2px solid var(--neon-yellow);' : ''}">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--neon-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">${p.name[0]}</div>
+                <span style="font-weight: 500;">${p.name}</span>
+                ${i === this.localGame.currentPlayer ? '<span style="color: var(--neon-yellow);">🎯 دوره</span>' : ''}
+                <span style="margin-right: auto; font-size: 12px; color: var(--text-secondary);">🏆 ${p.score}</span>
+            </div>
+        `).join('');
+    }
+
+    getLocalGameTitle() {
+        const titles = {
+            'sinojem': '❓ سين وجيم',
+            'without-words': '🤐 بدون كلام',
+            'who-am-i': '🕵️ من أنا'
+        };
+        return titles[this.localGame?.game] || '🎮 لعبة';
+    }
+
+    getLocalGameContent() {
+        const game = this.localGame?.game || 'sinojem';
+        switch(game) {
+            case 'sinojem':
+                const questions = [
+                    { q: 'ما هو عاصمة مصر؟', options: ['القاهرة', 'الإسكندرية', 'الجيزة', 'أسوان'], a: 'القاهرة' },
+                    { q: 'كم عدد الكواكب في المجموعة الشمسية؟', options: ['7', '8', '9', '10'], a: '8' }
+                ];
+                const q = questions[this.localGame.currentPlayer % questions.length];
+                return `
+                    <h4 style="font-size: 20px; margin: 16px 0;">${q.q}</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        ${q.options.map(opt => `
+                            <button class="btn btn-outline btn-sm" onclick="window.app.localAnswer('${opt}', '${q.a}')">${opt}</button>
+                        `).join('')}
+                    </div>
+                `;
+            case 'without-words':
+                const words = ['تفاحة', 'سيارة', 'بيت', 'شمس', 'قمر'];
+                const word = words[this.localGame.currentPlayer % words.length];
+                return `
+                    <div style="font-size: 48px; margin: 16px 0;">🎭</div>
+                    <h4 style="font-size: 32px; color: var(--neon-yellow);">${word}</h4>
+                    <p style="color: var(--text-secondary);">🗣️ قم بوصف الكلمة بدون كلام</p>
+                `;
+            case 'who-am-i':
+                const characters = [
+                    { name: 'أحمد زكي', hint: 'ممثل مصري' },
+                    { name: 'جيف بيزوس', hint: 'رجل أعمال' }
+                ];
+                const char = characters[this.localGame.currentPlayer % characters.length];
+                return `
+                    <div style="font-size: 48px; margin: 16px 0;">🕵️</div>
+                    <h4 style="font-size: 20px; color: var(--neon-blue);">${char.hint}</h4>
+                    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
+                        <input type="text" id="local-guess" placeholder="من أنا؟" style="padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white;">
+                        <button class="btn btn-primary btn-sm" onclick="window.app.localGuess('${char.name}')">تخمين</button>
+                    </div>
+                `;
+            default:
+                return '<p>اختر لعبة</p>';
+        }
+    }
+
+    localCorrect() {
+        this.localGame.players[this.localGame.currentPlayer].score += 10;
+        this.nextLocalTurn();
+        this.playSound('win');
+    }
+
+    localWrong() {
+        this.nextLocalTurn();
+    }
+
+    localSkip() {
+        this.nextLocalTurn();
+    }
+
+    localAnswer(answer, correct) {
+        if (answer === correct) {
+            this.localCorrect();
+        } else {
+            this.localWrong();
+        }
+    }
+
+    localGuess(correctName) {
+        const input = document.getElementById('local-guess');
+        if (!input) return;
+        if (input.value.trim().toLowerCase() === correctName.toLowerCase()) {
+            this.localCorrect();
+        } else {
+            this.localWrong();
+        }
+        input.value = '';
+    }
+
+    nextLocalTurn() {
+        this.localGame.currentPlayer = (this.localGame.currentPlayer + 1) % this.localGame.players.length;
+        this.renderLocalGame();
+    }
+
+    endLocalGame() {
+        if (confirm('هل تريد إنهاء اللعبة؟')) {
+            this.localGame = null;
+            this.showPage('home-page');
+            showToast('انتهت اللعبة', 'info');
+        }
+    }
+
+    // ===== Profile =====
+    async loadUserProfile() {
+        if (!this.currentUser) return;
+        document.getElementById('profile-avatar').src = this.currentUser.photoURL || '';
+        document.getElementById('profile-name').textContent = this.currentUser.displayName || 'مستخدم';
+        document.getElementById('profile-email').textContent = this.currentUser.email || '';
+    }
+
+    // ===== Rooms Loading =====
+    async loadActiveRooms() {
+        try {
+            const snapshot = await firebase.firestore().collection('rooms')
+                .where('isPlaying', '==', false)
+                .orderBy('createdAt', 'desc')
+                .limit(20)
+                .get();
+
+            const container = document.getElementById('active-rooms') || document.getElementById('all-rooms');
+            if (!container) return;
+
+            if (snapshot.empty) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">لا توجد غرف نشطة حالياً</p>';
+                return;
+            }
+
+            container.innerHTML = snapshot.docs.map(doc => {
+                const room = doc.data();
+                return `
+                    <div class="room-card" onclick="window.app.joinRoom('${doc.id}')">
+                        <div class="room-header">
+                            <span class="room-code">${doc.id}</span>
+                            <span style="font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 700; background: var(--neon-green); color: #1a1a2e;">مفتوحة</span>
+                        </div>
+                        <h4>${room.name || 'غرفة جديدة'}</h4>
+                        <p style="color: var(--text-secondary); font-size: 14px;">🎮 ${room.game || 'سين وجيم'}</p>
+                        <div style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 14px;">
+                            <span>👥 ${room.players ? room.players.length : 0}/${room.maxPlayers || 8}</span>
+                            <span style="color: var(--text-muted);">|</span>
+                            <span>👑 ${room.adminName || 'المشرف'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Error loading rooms:', error);
+        }
+    }
+
+    // ===== Modals =====
+    showCreateRoomModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay active';
+        modal.innerHTML = `
+            <div class="modal">
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()" style="float: left; background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer;">✕</button>
+                <h3 style="margin-bottom: 16px;">🚀 إنشاء غرفة جديدة</h3>
+                <div class="input-group">
+                    <label>اسم الغرفة</label>
+                    <input type="text" id="create-room-name" placeholder="اسم الغرفة" value="غرفة سين وجيم">
+                </div>
+                <div class="input-group">
+                    <label>اللعبة</label>
+                    <select id="create-room-game">
+                        <option value="sinojem">سين وجيم</option>
+                        <option value="without-words">بدون كلام</option>
+                        <option value="who-am-i">من أنا</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>عدد اللاعبين الأقصى</label>
+                    <select id="create-room-max">
+                        <option value="4">4</option>
+                        <option value="6">6</option>
+                        <option value="8" selected>8</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="window.app.createRoomFromModal()">إنشاء الغرفة</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    createRoomFromModal() {
+        const name = document.getElementById('create-room-name').value;
+        const game = document.getElementById('create-room-game').value;
+        const maxPlayers = parseInt(document.getElementById('create-room-max').value);
+        this.createRoom({ name, game, maxPlayers });
+        document.querySelector('.modal-overlay')?.remove();
+    }
+
+    showJoinRoomModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay active';
+        modal.innerHTML = `
+            <div class="modal">
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()" style="float: left; background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer;">✕</button>
+                <h3 style="margin-bottom: 16px;">🔑 الانضمام إلى غرفة</h3>
+                <div class="input-group">
+                    <label>كود الغرفة</label>
+                    <input type="text" id="join-room-code" placeholder="مثال: ABC123" style="text-transform: uppercase; text-align: center; font-size: 24px; letter-spacing: 4px;">
+                </div>
+                <button class="btn btn-success btn-block" onclick="window.app.joinRoomFromModal()">انضمام</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    joinRoomFromModal() {
+        const code = document.getElementById('join-room-code').value.toUpperCase().trim();
+        if (!code) {
+            showToast('الرجاء إدخال كود الغرفة', 'error');
+            return;
+        }
+        this.joinRoom(code);
+        document.querySelector('.modal-overlay')?.remove();
+    }
+
+    // ===== Logout =====
+    logout() {
+        if (this.currentRoom) {
+            this.leaveRoom();
+        }
+        firebase.auth().signOut();
+        showToast('تم تسجيل الخروج', 'info');
+    }
+
+    // ===== Sound =====
+    playSound(type) {
+        try {
+            const audio = new Audio(`assets/sounds/${type}.mp3`);
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
+        } catch(e) {}
+    }
+
+    // ===== Game Data =====
+    loadGameData() {
+        // Load from JSON files
+        fetch('database/sinojem.json').catch(() => console.log('Using default data'));
+        fetch('database/without-words.json').catch(() => console.log('Using default data'));
+        fetch('database/who-am-i.json').catch(() => console.log('Using default data'));
+    }
+}
+
+// ===== Toast System =====
+function showToast(message, type = 'info') {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ===== Initialize =====
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new SJGames();
+});
