@@ -9,7 +9,9 @@ const ASSETS = [
 
   '/sj-games/assets/icons/icon-144.png',
   '/sj-games/assets/icons/icon-192.png',
-  '/sj-games/assets/icons/icon-512.png'
+  '/sj-games/assets/icons/icon-512.png',
+
+  '/sj-games/assets/sounds/win.mp3'
 ];
 
 // Install Event
