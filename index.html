@@ -3,124 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a0a1a">
-    <meta name="description" content="منصة سين وجيم - ألعاب تفاعلية مع الأصدقاء">
+    <meta name="theme-color" content="#070B1A">
+    <meta name="description" content="S&J Games - منصة ألعاب تفاعلية مع الأصدقاء">
     
+    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="S&J Games">
     
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
-<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <!-- Icons -->
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16.png">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
-    <title>سين وجيم | S&J Games</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background: #0a0a1a;
-            color: #fff;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0a0a1a;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.8s ease, visibility 0.8s ease;
-        }
-        #loading-screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-        .loader-logo {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 30px;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        .loader-bar {
-            width: 200px;
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 20px;
-        }
-        .loader-progress {
-            height: 100%;
-            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff);
-            border-radius: 2px;
-            animation: loading 2s ease-in-out infinite;
-            width: 0%;
-        }
-        @keyframes loading {
-            0% { width: 0%; }
-            50% { width: 70%; }
-            100% { width: 100%; }
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-    </style>
+    <title>S&J Games | سين وجيم</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loading-screen">
-        <img src="assets/icons/icon-512.png" alt="S&J Games" class="loader-logo">
-        <h2 style="font-family: 'Orbitron', cursive; color: #ffd93d; font-size: 24px; margin-bottom: 10px;">S&J Games</h2>
-        <p style="color: #8892b0;">جاري التحميل...</p>
-        <div class="loader-bar">
-            <div class="loader-progress"></div>
+
+<!-- ========================================== -->
+<!-- SPLASH SCREEN -->
+<!-- ========================================== -->
+<div id="splash-screen">
+    <div class="splash-content">
+        <img src="assets/icons/logo.svg" alt="S&J Games" class="splash-logo" 
+             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%234F46E5%22 width=%22100%22 height=%22100%22 rx=%2220%22/%3E%3Ctext x=%2220%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3ESJ%3C/text%3E%3C/svg%3E'">
+        <h1 class="splash-title">S&J Games</h1>
+        <p class="splash-subtitle">منصة ألعاب تفاعلية</p>
+        <div class="splash-loader">
+            <div class="splash-progress"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MAIN APP -->
+<!-- ========================================== -->
+<div id="app">
+    
+    <!-- ====== AUTH PAGE ====== -->
+    <div id="page-auth" class="page active">
+        <div class="auth-container">
+            <div class="auth-glass">
+                <div class="auth-header">
+                    <img src="assets/icons/logo.svg" alt="S&J Games" class="auth-logo"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%234F46E5%22 width=%22100%22 height=%22100%22 rx=%2220%22/%3E%3Ctext x=%2220%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3ESJ%3C/text%3E%3C/svg%3E'">
+                    <h1 class="auth-title"><span class="gradient-text">S&J Games</span></h1>
+                    <p class="auth-subtitle">منصة ألعاب تفاعلية مع الأصدقاء</p>
+                </div>
+
+                <button id="google-login-btn" class="btn btn-google btn-block btn-lg">
+                    <i class="fab fa-google"></i> تسجيل الدخول بحساب Google
+                </button>
+
+                <div class="auth-divider"><span>أو</span></div>
+
+                <div class="input-group">
+                    <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                    <input type="email" id="login-email" placeholder="example@email.com">
+                </div>
+
+                <div class="input-group">
+                    <label><i class="fas fa-lock"></i> كلمة المرور</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
+                </div>
+
+                <button id="login-btn" class="btn btn-primary btn-block">تسجيل الدخول</button>
+
+                <div class="auth-footer">
+                    <span>ليس لديك حساب؟</span>
+                    <a href="#" id="show-register">إنشاء حساب</a>
+                </div>
+
+                <div id="register-form" style="display: none;">
+                    <div class="input-group">
+                        <label><i class="fas fa-user"></i> الاسم</label>
+                        <input type="text" id="register-name" placeholder="اسمك">
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                        <input type="email" id="register-email" placeholder="example@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-lock"></i> كلمة المرور</label>
+                        <input type="password" id="register-password" placeholder="••••••••">
+                    </div>
+                    <button id="register-btn" class="btn btn-success btn-block">إنشاء حساب</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="app">
-        <div id="content" style="display: none;"></div>
+    <!-- ====== CHOOSE MODE PAGE ====== -->
+    <div id="page-mode" class="page">
+        <div class="mode-container">
+            <h1 class="mode-title">🎮 كيف تريد اللعب؟</h1>
+            <p class="mode-subtitle">اختر طريقة اللعب المناسبة لك</p>
+            
+            <div class="mode-grid">
+                <div class="mode-card glass" onclick="window.app.selectMode('online')">
+                    <div class="mode-icon">🌐</div>
+                    <h3>عن بعد</h3>
+                    <p>العب مع أصدقائك من أي مكان</p>
+                    <ul class="mode-features">
+                        <li><i class="fas fa-check-circle"></i> غرف خاصة</li>
+                        <li><i class="fas fa-check-circle"></i> شات وصوت</li>
+                        <li><i class="fas fa-check-circle"></i> مكالمات فيديو</li>
+                    </ul>
+                    <button class="btn btn-primary btn-block">اختيار</button>
+                </div>
+
+                <div class="mode-card glass" onclick="window.app.selectMode('local')">
+                    <div class="mode-icon">📱</div>
+                    <h3>عن قرب</h3>
+                    <p>العب مع أصدقائك في نفس المكان</p>
+                    <ul class="mode-features">
+                        <li><i class="fas fa-check-circle"></i> بدون إنترنت</li>
+                        <li><i class="fas fa-check-circle"></i> نفس الجهاز</li>
+                        <li><i class="fas fa-check-circle"></i> سريع ومباشر</li>
+                    </ul>
+                    <button class="btn btn-success btn-block">اختيار</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="https://meet.jit.si/external_api.js"></script>
-    
-    <script src="app.js" defer></script>
-    <script src="firebase.js" defer></script>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-               navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed:', err));
-            });
-        }
-        
+    <!-- ====== HOME PAGE ====== -->
+    <div id="page-home" class="page">
+        <div class="home-container">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <div class="welcome-text">
+                    <h1>🎮 مرحباً بك في <span class="gradient-text">S&J Games</span></h1>
+                    <p>اختر لعبتك وابدأ اللعب مع الأصدقاء</p>
+                </div>
+                <div class="quick-actions">
+                    <button class="btn btn-primary" onclick="window.app.showCreateRoom()">
+                        <i class="fas fa-plus-circle"></i> غرفة جديدة
+                    </button>
+                    <button class="btn btn-success" onclick="window.app.showJoinRoom()">
+                        <i class="fas fa-sign-in-alt"></i> انضمام
+                    </button>
+                    <button class="btn btn-purple" onclick="window.app.selectMode('local')">
+                        <i class="fas fa-users"></i> لعب عن قرب
+                    </button>
+                </div>
+            </div>
+
+            <!-- Featured Games -->
+            <div class="featured-games">
+                <h2>🌟 ألعاب مميزة</h2>
+                <div class="games-grid">
+                    <div class="game-card" onclick="window.app.playGame('sinojem')">
+                        <div class="game-card-icon">❓</div>
+                        <h3>سين وجيم</h3>
+                        <p>أسئلة وأجوبة</p>
+                        <span class="badge badge-primary">شائعة</span>
+                        <button class="btn btn-primary btn-sm">لعب</button>
+                    </div>
+
+                    <div class="game-card" onclick="window.app.playGame('without-words')">
+                        <div class="game-card-icon">🤐</div>
+                        <h3>بدون كلام</h3>
+                        <p>تخمين بالإيماءات</p>
+                        <span class="badge badge-success">جديدة</span>
+                        <button class="btn btn-success btn-sm">لعب</button>
+                    </div>
+
+                    <div class="game-card" onclick="window.app.playGame('who-am-i')">
+                        <div class="game-card-icon">🕵️</div>
+                        <h3>من أنا</h3>
+                        <p>تخمين الشخصيات</p>
+                        <span class="badge badge-purple">ممتعة</span>
+                        <button class="btn btn-purple btn-sm">لعب</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Rooms -->
+            <div class="active-rooms-section">
+                <h2>🏠 غرف نشطة</h2>
+                <div id="active-rooms" class="rooms-grid">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== GAME PAGE ====== -->
+    <div id="page-game" class="page">
+        <div class="game-container">
+            <div class="game-header">
+                <button class="btn btn-outline btn-sm" onclick="window.app.showPage('home')">
+                    <i class="fas fa-arrow-right"></i> رجوع
+                </button>
+                <h2 id="game-title">اللعبة</h2>
+                <span id="game-status" class="badge badge-success">جاري</span>
+            </div>
+
+            <div id="game-area" class="game-area glass">
+                <div class="game-placeholder">
+                    <i class="fas fa-gamepad"></i>
+                    <h3>استعد للعب</h3>
+                    <p>اللعبة ستبدأ قريباً</p>
+                </div>
+            </div>
+
+            <div class="game-sidebar">
+                <div class="game-players" id="game-players">
+                    <h4>👥 اللاعبين</h4>
+                    <div id="players-list"></div>
+                </div>
+                
+                <div class="game-chat">
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="chat-input" placeholder="اكتب رسالة...">
+                        <button class="btn btn-primary btn-sm" onclick="window.app.sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== ROOMS PAGE ====== -->
+    <div id="page-rooms" class="page">
+        <div class="rooms-container">
+            <div class="rooms-header">
+                <h1>🏠 الغرف</h1>
+                <button class="btn btn-primary" onclick="window.app.showCreateRoom()">
+                    <i class="fas fa-plus"></i> إنشاء
+                </button>
+            </div>
+            <div id="all-rooms" class="rooms-grid">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== PROFILE PAGE ====== -->
+    <div id="page-profile" class="page">
+        <div class="profile-container">
+            <div class="profile-card glass">
+                <div class="profile-avatar">
+                    <img id="profile-avatar-img" src="assets/icons/default-avatar.png" alt="Avatar">
+                    <div class="avatar-badge">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <h2 id="profile-name">اللاعب</h2>
+                <p id="profile-email">player@email.com</p>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-games">0</span>
+                        <span class="stat-label">مباريات</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-wins">0</span>
+                        <span class="stat-label">فوز</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-points">0</span>
+                        <span class="stat-label">نقاط</span>
+                    </div>
+                </div>
+
+                <div class="profile-achievements">
+                    <h3>🏆 الإنجازات</h3>
+                    <div class="achievements-grid">
+                        <div class="achievement locked">
+                            <i class="fas fa-lock"></i>
+                            <span>أول فوز</span>
+                        </div>
+                        <div class="achievement locked">
+                            <i class="fas fa-lock"></i>
+                            <span>10 مباريات</span>
+                        </div>
+                        <div class="achievement locked">
+                            <i class="fas fa-lock"></i>
+                            <span>100 نقطة</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-danger btn-block" onclick="window.app.logout()">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ====== BOTTOM NAVIGATION ====== -->
+<nav class="bottom-nav">
+    <div class="nav-item active" data-page="home">
+        <i class="fas fa-home"></i>
+        <span>الرئيسية</span>
+    </div>
+    <div class="nav-item" data-page="game">
+        <i class="fas fa-gamepad"></i>
+        <span>اللعبة</span>
+    </div>
+    <div class="nav-item" data-page="rooms">
+        <i class="fas fa-users"></i>
+        <span>الغرف</span>
+    </div>
+    <div class="nav-item" data-page="profile">
+        <i class="fas fa-user"></i>
+        <span>الملف</span>
+    </div>
+</nav>
+
+<!-- ====== FIREBASE ====== -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<!-- ====== APP ====== -->
+<script src="app.js" defer></script>
+<script src="firebase.js" defer></script>
+
+<script>
+    // Splash Screen
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            splash.classList.add('hidden');
+            setTimeout(() => splash.remove(), 600);
+        }, 2500);
+    });
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('content').style.display = 'block';
-            }, 1500);
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('✅ SW registered'))
+                .catch(err => console.log('❌ SW registration failed:', err));
         });
-    </script>
+    }
+</script>
+
 </body>
 </html>
