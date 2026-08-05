@@ -3,20 +3,6 @@
 // Professional Offline-First PWA
 // ============================================
 
-// ===== App State =====
-const AppState = {
-    currentUser: null,
-    currentRoom: null,
-    isAdmin: false,
-    roomData: null,
-    localGame: null,
-    currentPage: 'home',
-    isOffline: false,
-    darkMode: true,
-    soundEnabled: true,
-    notifications: []
-};
-
 // ===== Sound Manager =====
 class SoundManager {
     constructor() {
@@ -29,11 +15,9 @@ class SoundManager {
         const soundFiles = {
             click: 'click.mp3',
             win: 'win.mp3',
-            lose: 'lose.mp3',
             correct: 'correct.mp3',
             wrong: 'wrong.mp3',
-            notification: 'notification.mp3',
-            levelUp: 'levelup.mp3'
+            notification: 'notification.mp3'
         };
 
         Object.keys(soundFiles).forEach(key => {
@@ -60,99 +44,30 @@ class SoundManager {
     }
 }
 
-// ===== Particles System =====
-class ParticleSystem {
-    constructor() {
-        this.container = document.createElement('div');
-        this.container.className = 'particles-container';
-        this.container.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        `;
-        document.body.prepend(this.container);
-        this.particles = [];
-        this.init();
-    }
-
-    init() {
-        for (let i = 0; i < 50; i++) {
-            this.createParticle();
-        }
-        setInterval(() => this.animate(), 50);
-    }
-
-    createParticle() {
-        const el = document.createElement('div');
-        const size = Math.random() * 4 + 2;
-        const colors = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-        
-        el.style.cssText = `
-            position: absolute;
-            width: ${size}px;
-            height: ${size}px;
-            background: ${colors[Math.floor(Math.random() * colors.length)]};
-            border-radius: 50%;
-            opacity: ${Math.random() * 0.5 + 0.1};
-            left: ${Math.random() * 100}%;
-            top: -10%;
-            box-shadow: 0 0 ${size * 3}px currentColor;
-        `;
-        
-        this.container.appendChild(el);
-        this.particles.push({
-            el,
-            x: parseFloat(el.style.left),
-            y: -10,
-            speed: Math.random() * 2 + 1,
-            drift: (Math.random() - 0.5) * 0.5,
-            size: size,
-            opacity: parseFloat(el.style.opacity)
-        });
-    }
-
-    animate() {
-        this.particles.forEach(p => {
-            p.y += p.speed * 0.5;
-            p.x += p.drift;
-            
-            if (p.y > 110) {
-                p.y = -10;
-                p.x = Math.random() * 100;
-                p.speed = Math.random() * 2 + 1;
-            }
-            
-            p.el.style.top = p.y + '%';
-            p.el.style.left = p.x + '%';
-            p.el.style.opacity = p.opacity * (1 - p.y / 110);
-        });
-    }
-}
-
 // ===== Toast System =====
 function showToast(message, type = 'info', duration = 3000) {
-    const container = document.querySelector('.toast-container') || (() => {
-        const c = document.createElement('div');
-        c.className = 'toast-container';
-        document.body.appendChild(c);
-        return c;
-    })();
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
     toast.innerHTML = `
-        <i class="fas ${getToastIcon(type)}"></i>
+        <i class="fas ${icons[type] || icons.info}"></i>
         <span>${message}</span>
         <div class="toast-progress"></div>
     `;
-    
     container.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.classList.add('show');
         const progress = toast.querySelector('.toast-progress');
@@ -167,19 +82,9 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
-function getToastIcon(type) {
-    const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    };
-    return icons[type] || icons.info;
-}
-
 // ===== Confetti System =====
 function showConfetti() {
-    const colors = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#3B82F6'];
+    const colors = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
     const container = document.createElement('div');
     container.style.cssText = `
         position: fixed;
@@ -192,14 +97,14 @@ function showConfetti() {
     `;
     document.body.appendChild(container);
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 80; i++) {
         const confetti = document.createElement('div');
         const color = colors[Math.floor(Math.random() * colors.length)];
         const size = Math.random() * 8 + 4;
         const left = Math.random() * 100;
         const delay = Math.random() * 2;
         const duration = Math.random() * 2 + 2;
-        
+
         confetti.style.cssText = `
             position: absolute;
             width: ${size}px;
@@ -220,324 +125,43 @@ function showConfetti() {
 // ===== Main App =====
 class SJGames {
     constructor() {
+        this.currentUser = null;
+        this.currentRoom = null;
+        this.isAdmin = false;
+        this.roomData = null;
+        this.localGame = null;
+        this.currentPage = 'auth';
         this.sound = new SoundManager();
-        this.particles = new ParticleSystem();
         this.pages = {};
         this.init();
     }
 
     init() {
-        this.createPages();
-        this.setupNavigation();
         this.setupEventListeners();
+        this.setupNavigation();
+        this.checkAuthState();
         this.setupSW();
         this.renderLocalPlayersInput();
         this.loadGameData();
-        this.showPage('home');
         this.setupInstallPrompt();
-        
-        // Show welcome toast
-        setTimeout(() => {
-            showToast('🎮 مرحباً بك في S&J Games', 'success');
-        }, 2000);
     }
 
-    createPages() {
-        const pages = ['home', 'games', 'rooms', 'profile', 'game', 'local'];
-        pages.forEach(page => {
-            const el = document.createElement('div');
-            el.id = `page-${page}`;
-            el.className = 'page';
-            this.pages[page] = el;
-            document.getElementById('app-pages').appendChild(el);
-        });
-
-        this.renderHomePage();
-        this.renderGamesPage();
-        this.renderRoomsPage();
-        this.renderProfilePage();
-        this.renderGamePage();
-        this.renderLocalGamePage();
-    }
-
-    // ===== Home Page =====
-    renderHomePage() {
-        const page = this.pages.home;
-        page.innerHTML = `
-            <div class="home-container">
-                <div class="welcome-section">
-                    <div class="welcome-text">
-                        <h1>🎮 <span class="gradient-text">S&J Games</span></h1>
-                        <p>منصة ألعاب تفاعلية مع الأصدقاء</p>
-                    </div>
-                    <div class="quick-actions">
-                        <button class="btn btn-primary" onclick="window.app.showCreateRoom()">
-                            <i class="fas fa-plus-circle"></i> غرفة جديدة
-                        </button>
-                        <button class="btn btn-success" onclick="window.app.showJoinRoom()">
-                            <i class="fas fa-sign-in-alt"></i> انضمام
-                        </button>
-                        <button class="btn btn-purple" onclick="window.app.showLocalGame()">
-                            <i class="fas fa-users"></i> لعب عن قرب
-                        </button>
-                    </div>
-                </div>
-
-                <div class="featured-games">
-                    <h2>🌟 ألعاب مميزة</h2>
-                    <div class="games-grid">
-                        ${this.getGameCards()}
-                    </div>
-                </div>
-
-                <div class="active-rooms-section">
-                    <h2>🏠 غرف نشطة</h2>
-                    <div id="active-rooms" class="rooms-grid">
-                        <div class="loading-spinner"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    getGameCards() {
-        const games = [
-            { id: 'sinojem', icon: '❓', title: 'سين وجيم', desc: 'أسئلة وأجوبة', badge: 'شائعة' },
-            { id: 'without-words', icon: '🤐', title: 'بدون كلام', desc: 'تخمين بالإيماءات', badge: 'جديدة' },
-            { id: 'who-am-i', icon: '🕵️', title: 'من أنا', desc: 'تخمين الشخصيات', badge: 'ممتعة' }
-        ];
-
-        return games.map(game => `
-            <div class="game-card" onclick="window.app.playGame('${game.id}')">
-                <div class="game-card-icon">${game.icon}</div>
-                <h3>${game.title}</h3>
-                <p>${game.desc}</p>
-                <span class="badge badge-primary">${game.badge}</span>
-                <button class="btn btn-primary btn-sm">لعب الآن</button>
-            </div>
-        `).join('');
-    }
-
-    // ===== Games Page =====
-    renderGamesPage() {
-        const page = this.pages.games;
-        page.innerHTML = `
-            <div class="games-container">
-                <h1>🎮 جميع الألعاب</h1>
-                <div class="games-grid">
-                    ${this.getGameCards()}
-                </div>
-                <div class="game-stats">
-                    <div class="stat-card">
-                        <i class="fas fa-trophy"></i>
-                        <span>0</span>
-                        <label>مباريات</label>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-star"></i>
-                        <span>0</span>
-                        <label>نقاط</label>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-users"></i>
-                        <span>0</span>
-                        <label>أصدقاء</label>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ===== Rooms Page =====
-    renderRoomsPage() {
-        const page = this.pages.rooms;
-        page.innerHTML = `
-            <div class="rooms-container">
-                <div class="rooms-header">
-                    <h1>🏠 الغرف</h1>
-                    <button class="btn btn-primary" onclick="window.app.showCreateRoom()">
-                        <i class="fas fa-plus"></i> إنشاء
-                    </button>
-                </div>
-                <div id="all-rooms" class="rooms-grid">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ===== Profile Page =====
-    renderProfilePage() {
-        const page = this.pages.profile;
-        page.innerHTML = `
-            <div class="profile-container">
-                <div class="profile-card glass">
-                    <div class="profile-avatar">
-                        <img id="profile-avatar-img" src="assets/icons/default-avatar.png" alt="Avatar">
-                        <div class="avatar-badge">
-                            <i class="fas fa-camera"></i>
-                        </div>
-                    </div>
-                    <h2 id="profile-name">اللاعب</h2>
-                    <p id="profile-email">player@email.com</p>
-                    
-                    <div class="profile-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">0</span>
-                            <span class="stat-label">مباريات</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">0</span>
-                            <span class="stat-label">فوز</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">0</span>
-                            <span class="stat-label">نقاط</span>
-                        </div>
-                    </div>
-
-                    <div class="profile-achievements">
-                        <h3>🏆 الإنجازات</h3>
-                        <div class="achievements-grid">
-                            <div class="achievement locked">
-                                <i class="fas fa-lock"></i>
-                                <span>أول فوز</span>
-                            </div>
-                            <div class="achievement locked">
-                                <i class="fas fa-lock"></i>
-                                <span>10 مباريات</span>
-                            </div>
-                            <div class="achievement locked">
-                                <i class="fas fa-lock"></i>
-                                <span>100 نقطة</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-danger btn-block" onclick="window.app.logout()">
-                        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    // ===== Game Page =====
-    renderGamePage() {
-        const page = this.pages.game;
-        page.innerHTML = `
-            <div class="game-container">
-                <div class="game-header">
-                    <button class="btn btn-outline btn-sm" onclick="window.app.showPage('home')">
-                        <i class="fas fa-arrow-right"></i> رجوع
-                    </button>
-                    <h2 id="game-title">اللعبة</h2>
-                    <span id="game-status" class="badge badge-success">جاري</span>
-                </div>
-
-                <div id="game-area" class="game-area glass">
-                    <div class="game-placeholder">
-                        <i class="fas fa-gamepad"></i>
-                        <h3>استعد للعب</h3>
-                        <p>اللعبة ستبدأ قريباً</p>
-                    </div>
-                </div>
-
-                <div class="game-sidebar">
-                    <div class="game-players" id="game-players">
-                        <h4>👥 اللاعبين</h4>
-                        <div id="players-list"></div>
-                    </div>
-                    
-                    <div class="game-chat">
-                        <div class="chat-messages" id="chat-messages"></div>
-                        <div class="chat-input">
-                            <input type="text" id="chat-input" placeholder="اكتب رسالة...">
-                            <button class="btn btn-primary btn-sm" onclick="window.app.sendMessage()">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ===== Local Game Page =====
-    renderLocalGamePage() {
-        const page = this.pages.local;
-        page.innerHTML = `
-            <div class="local-game-container">
-                <div class="local-game-setup glass">
-                    <h2>🎮 لعب عن قرب</h2>
-                    <p>بدون إنترنت - على نفس الجهاز</p>
-                    
-                    <div class="input-group">
-                        <label>عدد اللاعبين</label>
-                        <select id="local-player-count" onchange="window.app.renderLocalPlayersInput()">
-                            <option value="2">2 لاعبين</option>
-                            <option value="3">3 لاعبين</option>
-                            <option value="4">4 لاعبين</option>
-                            <option value="5">5 لاعبين</option>
-                            <option value="6">6 لاعبين</option>
-                        </select>
-                    </div>
-
-                    <div id="local-players-input"></div>
-
-                    <div class="input-group">
-                        <label>اختر اللعبة</label>
-                        <select id="local-game-select">
-                            <option value="sinojem">سين وجيم</option>
-                            <option value="without-words">بدون كلام</option>
-                            <option value="who-am-i">من أنا</option>
-                        </select>
-                    </div>
-
-                    <button class="btn btn-success btn-block btn-lg" onclick="window.app.startLocalGame()">
-                        <i class="fas fa-play"></i> بدء اللعب
-                    </button>
-                </div>
-            </div>
-        `;
-        this.renderLocalPlayersInput();
-    }
-
-    // ===== Navigation =====
-    setupNavigation() {
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const page = item.dataset.page;
-                this.showPage(page);
-                navItems.forEach(n => n.classList.remove('active'));
-                item.classList.add('active');
-            });
-        });
-    }
-
-    showPage(page) {
-        Object.keys(this.pages).forEach(key => {
-            this.pages[key].style.display = 'none';
-        });
-        
-        if (this.pages[page]) {
-            this.pages[page].style.display = 'block';
-            this.pages[page].classList.add('page-enter');
-            setTimeout(() => this.pages[page].classList.remove('page-enter'), 300);
-        }
-        
-        this.currentPage = page;
-        
-        // Update nav
-        document.querySelectorAll('.nav-item').forEach(n => {
-            n.classList.toggle('active', n.dataset.page === page);
-        });
-    }
-
-    // ===== Event Listeners =====
+    // ===== Setup Event Listeners =====
     setupEventListeners() {
-        // Global click handler for sounds
+        // Auth
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'google-login-btn') this.googleLogin();
+            if (e.target.id === 'login-btn') this.emailLogin();
+            if (e.target.id === 'register-btn') this.emailRegister();
+            if (e.target.id === 'show-register') {
+                e.preventDefault();
+                const form = document.getElementById('register-form');
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                e.target.textContent = form.style.display === 'none' ? 'إنشاء حساب' : 'إلغاء';
+            }
+        });
+
+        // Global click sound
         document.addEventListener('click', (e) => {
             if (e.target.closest('.btn')) {
                 this.sound.play('click');
@@ -549,46 +173,366 @@ class SJGames {
             if (e.key === 'Enter' && document.activeElement?.id === 'chat-input') {
                 this.sendMessage();
             }
-        });
-    }
-
-    // ===== Service Worker =====
-    setupSW() {
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('SW registered:', reg))
-                    .catch(err => console.log('SW registration failed:', err));
-            });
-        }
-    }
-
-    // ===== Install Prompt =====
-    setupInstallPrompt() {
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const installBtn = document.getElementById('install-btn');
-            if (installBtn) {
-                installBtn.style.display = 'flex';
-                installBtn.addEventListener('click', () => {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(result => {
-                        if (result.outcome === 'accepted') {
-                            showToast('✅ تم تثبيت التطبيق!', 'success');
-                        }
-                        deferredPrompt = null;
-                    });
-                });
+            if (e.key === 'Enter' && document.activeElement?.id === 'whoami-guess') {
+                const btn = document.querySelector('#whoami-guess + .btn');
+                if (btn) btn.click();
             }
         });
     }
 
+    // ===== Navigation =====
+    setupNavigation() {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                if (page === 'auth' || page === 'mode') return;
+                this.showPage(page);
+            });
+        });
+    }
+
+    showPage(page) {
+        // Hide all pages
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+        // Show target page
+        const target = document.getElementById(`page-${page}`);
+        if (target) {
+            target.classList.add('active');
+            target.style.animation = 'none';
+            requestAnimationFrame(() => {
+                target.style.animation = 'pageFade 0.4s ease';
+            });
+        }
+
+        this.currentPage = page;
+
+        // Update nav
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
+
+        // Show/hide bottom nav
+        const nav = document.querySelector('.bottom-nav');
+        if (nav) {
+            const hiddenPages = ['auth', 'mode'];
+            nav.style.display = hiddenPages.includes(page) ? 'none' : 'flex';
+        }
+
+        // Load rooms if on rooms page
+        if (page === 'rooms') {
+            this.loadActiveRooms();
+        }
+
+        // Load profile if on profile page
+        if (page === 'profile') {
+            this.loadUserProfile();
+        }
+    }
+
+    // ===== Authentication =====
+    async googleLogin() {
+        try {
+            showToast('جاري تسجيل الدخول...', 'info');
+            const result = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+            this.currentUser = result.user;
+            this.handleAuthSuccess();
+        } catch (error) {
+            showToast('فشل تسجيل الدخول: ' + error.message, 'error');
+        }
+    }
+
+    async emailLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        if (!email || !password) {
+            showToast('الرجاء إدخال البريد وكلمة المرور', 'warning');
+            return;
+        }
+        try {
+            const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+            this.currentUser = result.user;
+            this.handleAuthSuccess();
+        } catch (error) {
+            showToast('فشل تسجيل الدخول: ' + error.message, 'error');
+        }
+    }
+
+    async emailRegister() {
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        if (!name || !email || !password) {
+            showToast('الرجاء ملء جميع الحقول', 'warning');
+            return;
+        }
+        try {
+            const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+            await result.user.updateProfile({ displayName: name });
+            this.currentUser = result.user;
+            this.handleAuthSuccess();
+        } catch (error) {
+            showToast('فشل إنشاء الحساب: ' + error.message, 'error');
+        }
+    }
+
+    checkAuthState() {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                this.currentUser = user;
+                this.handleAuthSuccess();
+            } else {
+                this.showPage('auth');
+                const nav = document.querySelector('.bottom-nav');
+                if (nav) nav.style.display = 'none';
+            }
+        });
+    }
+
+    handleAuthSuccess() {
+        this.showPage('mode');
+        this.updateUserUI();
+        this.loadActiveRooms();
+        this.loadUserProfile();
+        showToast(`🎮 مرحباً ${this.currentUser.displayName || 'اللاعب'}`, 'success');
+    }
+
+    updateUserUI() {
+        // Update profile
+        const avatar = document.getElementById('profile-avatar-img');
+        const name = document.getElementById('profile-name');
+        const email = document.getElementById('profile-email');
+        if (avatar) avatar.src = this.currentUser?.photoURL || 'assets/icons/default-avatar.png';
+        if (name) name.textContent = this.currentUser?.displayName || 'اللاعب';
+        if (email) email.textContent = this.currentUser?.email || '';
+    }
+
+    // ===== Mode Selection =====
+    selectMode(mode) {
+        if (mode === 'online') {
+            this.showPage('home');
+            showToast('🌐 تم اختيار اللعب عن بعد', 'success');
+        } else {
+            this.showPage('local');
+            showToast('📱 تم اختيار اللعب عن قرب', 'success');
+        }
+    }
+
+    // ===== Rooms =====
+    generateRoomCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+            code += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return code;
+    }
+
+    async createRoom(roomData) {
+        if (!this.currentUser) {
+            showToast('الرجاء تسجيل الدخول أولاً', 'warning');
+            return;
+        }
+        try {
+            const roomCode = this.generateRoomCode();
+            const room = {
+                code: roomCode,
+                name: roomData.name || 'غرفة جديدة',
+                game: roomData.game || 'sinojem',
+                isPlaying: false,
+                adminId: this.currentUser.uid,
+                adminName: this.currentUser.displayName || 'المشرف',
+                players: [{
+                    uid: this.currentUser.uid,
+                    name: this.currentUser.displayName || 'لاعب',
+                    photoURL: this.currentUser.photoURL || '',
+                    score: 0
+                }],
+                maxPlayers: roomData.maxPlayers || 8,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await firebase.firestore().collection('rooms').doc(roomCode).set(room);
+            this.currentRoom = roomCode;
+            this.isAdmin = true;
+            this.enterRoom(roomCode);
+            showToast('✅ تم إنشاء الغرفة بنجاح!', 'success');
+        } catch (error) {
+            showToast('فشل إنشاء الغرفة: ' + error.message, 'error');
+        }
+    }
+
+    async joinRoom(roomCode) {
+        if (!this.currentUser) {
+            showToast('الرجاء تسجيل الدخول أولاً', 'warning');
+            return;
+        }
+        try {
+            const roomDoc = await firebase.firestore().collection('rooms').doc(roomCode).get();
+            if (!roomDoc.exists) {
+                showToast('❌ الغرفة غير موجودة', 'error');
+                return;
+            }
+
+            const room = roomDoc.data();
+            if (room.players.length >= room.maxPlayers) {
+                showToast('❌ الغرفة ممتلئة', 'error');
+                return;
+            }
+
+            const player = {
+                uid: this.currentUser.uid,
+                name: this.currentUser.displayName || 'لاعب',
+                photoURL: this.currentUser.photoURL || '',
+                score: 0
+            };
+
+            await firebase.firestore().collection('rooms').doc(roomCode).update({
+                players: firebase.firestore.FieldValue.arrayUnion(player)
+            });
+
+            this.currentRoom = roomCode;
+            this.isAdmin = false;
+            this.enterRoom(roomCode);
+            showToast('✅ تم الانضمام إلى الغرفة!', 'success');
+        } catch (error) {
+            showToast('فشل الانضمام: ' + error.message, 'error');
+        }
+    }
+
+    enterRoom(roomCode) {
+        this.showPage('game');
+        this.loadRoomData(roomCode);
+        this.setupRoomListeners(roomCode);
+        document.getElementById('game-title').textContent = 'غرفة اللعب';
+        document.getElementById('game-status').textContent = 'مفتوحة';
+        document.getElementById('game-status').className = 'badge badge-success';
+    }
+
+    async leaveRoom() {
+        if (!this.currentRoom) return;
+        try {
+            const roomRef = firebase.firestore().collection('rooms').doc(this.currentRoom);
+            const roomDoc = await roomRef.get();
+            const room = roomDoc.data();
+            const updatedPlayers = room.players.filter(p => p.uid !== this.currentUser.uid);
+
+            if (updatedPlayers.length === 0) {
+                await roomRef.delete();
+            } else {
+                await roomRef.update({ players: updatedPlayers });
+                if (this.isAdmin && updatedPlayers.length > 0) {
+                    await roomRef.update({ adminId: updatedPlayers[0].uid, adminName: updatedPlayers[0].name });
+                }
+            }
+
+            this.currentRoom = null;
+            this.isAdmin = false;
+            this.showPage('home');
+            this.loadActiveRooms();
+            showToast('تم الخروج من الغرفة', 'info');
+        } catch (error) {
+            showToast('فشل الخروج: ' + error.message, 'error');
+        }
+    }
+
+    async loadRoomData(roomCode) {
+        try {
+            const roomDoc = await firebase.firestore().collection('rooms').doc(roomCode).get();
+            if (roomDoc.exists) {
+                this.roomData = roomDoc.data();
+                this.updateRoomUI();
+            }
+        } catch (error) {
+            console.error('Error loading room:', error);
+        }
+    }
+
+    setupRoomListeners(roomCode) {
+        if (this.roomUnsubscribe) this.roomUnsubscribe();
+        this.roomUnsubscribe = firebase.firestore().collection('rooms').doc(roomCode)
+            .onSnapshot((doc) => {
+                if (doc.exists) {
+                    this.roomData = doc.data();
+                    this.updateRoomUI();
+                }
+            });
+    }
+
+    updateRoomUI() {
+        if (!this.roomData) return;
+
+        const badge = document.getElementById('game-status');
+        if (this.roomData.isPlaying) {
+            badge.textContent = 'جاري اللعب';
+            badge.className = 'badge badge-warning';
+        } else {
+            badge.textContent = 'مفتوحة';
+            badge.className = 'badge badge-success';
+        }
+
+        this.updatePlayersList();
+        this.updateAdminControls();
+    }
+
+    updatePlayersList() {
+        const container = document.getElementById('players-list');
+        if (!container || !this.roomData || !this.roomData.players) return;
+
+        container.innerHTML = this.roomData.players.map(player => `
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid ${player.uid === this.currentUser?.uid ? 'var(--primary)' : 'var(--glass-border)'};">
+                <img src="${player.photoURL || 'assets/icons/default-avatar.png'}" 
+                     style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234F46E5%22/%3E%3Ctext x=%2235%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E${player.name?.[0] || 'P'}%3C/text%3E%3C/svg%3E'">
+                <span style="font-weight: 500; flex:1;">${player.name}</span>
+                ${player.uid === this.roomData.adminId ? '<span style="font-size: 11px; padding: 2px 10px; border-radius: 20px; background: var(--warning); color: #1a1a2e; font-weight: 700;">👑 مشرف</span>' : ''}
+                <span style="font-size: 12px; color: var(--text-secondary);">🏆 ${player.score || 0}</span>
+            </div>
+        `).join('');
+    }
+
+    updateAdminControls() {
+        const controls = document.getElementById('admin-controls');
+        if (!controls) return;
+        if (this.isAdmin && this.roomData) {
+            controls.style.display = 'flex';
+        } else {
+            controls.style.display = 'none';
+        }
+    }
+
+    // ===== Chat =====
+    async sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input?.value.trim();
+        if (!message || !this.currentRoom || !this.currentUser) return;
+
+        const chatData = {
+            uid: this.currentUser.uid,
+            name: this.currentUser.displayName || 'لاعب',
+            photoURL: this.currentUser.photoURL || '',
+            message: message,
+            timestamp: Date.now()
+        };
+
+        try {
+            await firebase.database().ref(`rooms/${this.currentRoom}/chat`).push(chatData);
+            input.value = '';
+        } catch (error) {
+            showToast('فشل إرسال الرسالة: ' + error.message, 'error');
+        }
+    }
+
     // ===== Games =====
     playGame(gameId) {
+        if (!this.currentUser) {
+            showToast('الرجاء تسجيل الدخول أولاً', 'warning');
+            return;
+        }
         this.showPage('game');
         document.getElementById('game-title').textContent = this.getGameTitle(gameId);
+        document.getElementById('game-status').textContent = 'جاري';
+        document.getElementById('game-status').className = 'badge badge-warning';
         this.loadGameContent(gameId);
     }
 
@@ -603,7 +547,8 @@ class SJGames {
 
     loadGameContent(gameId) {
         const area = document.getElementById('game-area');
-        switch(gameId) {
+        if (!area) return;
+        switch (gameId) {
             case 'sinojem':
                 this.renderSinojemGame(area);
                 break;
@@ -613,6 +558,8 @@ class SJGames {
             case 'who-am-i':
                 this.renderWhoAmIGame(area);
                 break;
+            default:
+                area.innerHTML = `<div class="game-placeholder"><i class="fas fa-gamepad"></i><h3>لعبة غير متوفرة</h3></div>`;
         }
     }
 
@@ -638,7 +585,7 @@ class SJGames {
             area.innerHTML = `
                 <div class="question-container">
                     <div class="question-progress">
-                        <div class="progress-bar" style="width: ${(current / questions.length) * 100}%"></div>
+                        <div class="progress-bar"><div style="width: ${(current / questions.length) * 100}%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 4px;"></div></div>
                         <span>${current + 1}/${questions.length}</span>
                     </div>
                     <div class="question-card glass">
@@ -651,8 +598,8 @@ class SJGames {
                             `).join('')}
                         </div>
                     </div>
-                    <div class="question-score">
-                        <span>⭐ النقاط: ${score}</span>
+                    <div class="question-score" style="text-align:center; margin-top:16px;">
+                        <span style="font-family: 'Orbitron', cursive; color: var(--secondary);">⭐ ${score}</span>
                     </div>
                 </div>
             `;
@@ -661,9 +608,9 @@ class SJGames {
         window.checkAnswer = (btn, answer, correct) => {
             const isCorrect = answer === correct;
             const allBtns = btn.parentElement.querySelectorAll('.option-btn');
-            
+
             allBtns.forEach(b => b.disabled = true);
-            
+
             if (isCorrect) {
                 score += 10;
                 btn.classList.add('correct');
@@ -699,12 +646,12 @@ class SJGames {
 
             const word = words[current];
             area.innerHTML = `
-                <div class="word-game-container">
-                    <div class="word-card glass">
-                        <div class="word-icon">🎭</div>
-                        <h3 class="word-display">${word}</h3>
-                        <p>🗣️ قم بوصف الكلمة بدون كلام</p>
-                        <div class="word-actions">
+                <div class="word-game-container" style="text-align:center; padding:20px;">
+                    <div class="word-card glass" style="padding:32px;">
+                        <div style="font-size:48px; margin-bottom:16px;">🎭</div>
+                        <h3 class="word-display" style="font-size:48px; color:var(--secondary);">${word}</h3>
+                        <p style="color:var(--text-secondary);">🗣️ قم بوصف الكلمة بدون كلام</p>
+                        <div class="word-actions" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
                             <button class="btn btn-success" onclick="window.app.wordCorrect()">
                                 <i class="fas fa-check"></i> صحيحة
                             </button>
@@ -715,7 +662,7 @@ class SJGames {
                                 <i class="fas fa-forward"></i> تخطي
                             </button>
                         </div>
-                        <div class="word-score">⭐ النقاط: ${score}</div>
+                        <div style="margin-top:16px; font-family: 'Orbitron', cursive; color: var(--secondary);">⭐ ${score}</div>
                     </div>
                 </div>
             `;
@@ -724,7 +671,7 @@ class SJGames {
         window.wordCorrect = () => {
             score += 5;
             this.sound.play('correct');
-            showToast('✅ إجابة صحيحة! +5 نقاط', 'success');
+            showToast('✅ +5 نقاط', 'success');
             current++;
             renderWord();
         };
@@ -764,18 +711,18 @@ class SJGames {
 
             const char = characters[current];
             area.innerHTML = `
-                <div class="whoami-container">
-                    <div class="whoami-card glass">
-                        <div class="whoami-icon">🕵️</div>
-                        <h3>من أنا؟</h3>
-                        <p class="whoami-hint">${char.hint}</p>
-                        <div class="whoami-input">
-                            <input type="text" id="whoami-guess" placeholder="اكتب التخمين..." />
+                <div class="whoami-container" style="text-align:center; padding:20px; max-width:500px; margin:0 auto;">
+                    <div class="whoami-card glass" style="padding:32px;">
+                        <div style="font-size:48px; margin-bottom:16px;">🕵️</div>
+                        <h3 style="font-family: 'Tajawal', sans-serif; font-size:24px;">من أنا؟</h3>
+                        <p style="color:var(--text-secondary); font-size:18px; margin:16px 0;">${char.hint}</p>
+                        <div class="whoami-input" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                            <input type="text" id="whoami-guess" placeholder="اكتب التخمين..." style="flex:1; min-width:150px; padding:10px 14px; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); border-radius:var(--radius-md); color:var(--text-primary); outline:none;">
                             <button class="btn btn-primary" onclick="window.app.checkWhoAmI('${char.name}')">
                                 <i class="fas fa-search"></i> تخمين
                             </button>
                         </div>
-                        <div class="word-score">⭐ النقاط: ${score}</div>
+                        <div style="margin-top:16px; font-family: 'Orbitron', cursive; color: var(--secondary);">⭐ ${score}</div>
                     </div>
                 </div>
             `;
@@ -785,7 +732,7 @@ class SJGames {
             const input = document.getElementById('whoami-guess');
             if (!input) return;
             const guess = input.value.trim();
-            
+
             if (guess.toLowerCase() === correctName.toLowerCase()) {
                 score += 15;
                 this.sound.play('correct');
@@ -806,21 +753,21 @@ class SJGames {
     showGameResult(area, score, total) {
         const percent = Math.round((score / (total * 10)) * 100);
         const grade = percent >= 80 ? 'ممتاز! 🌟' : percent >= 60 ? 'جيد جداً! 👍' : 'حاول مرة أخرى! 💪';
-        
+
         area.innerHTML = `
-            <div class="game-result glass">
-                <div class="result-icon">${percent >= 80 ? '🏆' : '🎯'}</div>
-                <h2>${grade}</h2>
-                <p>النقاط: ${score} من ${total * 10}</p>
-                <div class="result-progress">
-                    <div class="progress-bar" style="width: ${percent}%"></div>
+            <div class="game-result glass" style="text-align:center; padding:40px 24px; max-width:400px; margin:0 auto;">
+                <div style="font-size:64px; margin-bottom:16px;">${percent >= 80 ? '🏆' : '🎯'}</div>
+                <h2 style="font-family: 'Tajawal', sans-serif; font-size:28px;">${grade}</h2>
+                <p style="color:var(--text-secondary); font-size:18px;">النقاط: ${score} من ${total * 10}</p>
+                <div class="result-progress" style="width:100%; height:6px; background:var(--glass-border); border-radius:4px; margin:16px 0; overflow:hidden;">
+                    <div style="width:${percent}%; height:100%; background:linear-gradient(90deg, var(--primary), var(--secondary)); border-radius:4px;"></div>
                 </div>
                 <button class="btn btn-primary" onclick="window.app.showPage('home')">
                     <i class="fas fa-home"></i> العودة للرئيسية
                 </button>
             </div>
         `;
-        
+
         if (percent >= 80) {
             showConfetti();
         }
@@ -864,31 +811,33 @@ class SJGames {
         const game = document.getElementById('local-game-select').value;
         this.localGame = { players, game, currentPlayer: 0 };
         this.showPage('game');
-        
+
         document.getElementById('game-title').textContent = '🎮 لعب عن قرب';
         document.getElementById('game-status').textContent = 'جاري';
         document.getElementById('game-status').className = 'badge badge-warning';
-        
+
         this.renderLocalGame();
     }
 
     renderLocalGame() {
         const area = document.getElementById('game-area');
+        if (!area || !this.localGame) return;
         const player = this.localGame.players[this.localGame.currentPlayer];
-        
+
         area.innerHTML = `
-            <div class="local-game-play">
-                <div class="game-players-display">
+            <div class="local-game-play" style="width:100%;">
+                <div class="game-players-display" style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-bottom:20px;">
                     ${this.localGame.players.map((p, i) => `
-                        <div class="player-card ${i === this.localGame.currentPlayer ? 'active' : ''}">
-                            <div class="player-avatar">${p.name[0]}</div>
-                            <span>${p.name}</span>
-                            <span class="player-score">${p.score}</span>
+                        <div class="player-card" style="background:var(--bg-glass); border-radius:var(--radius-md); padding:12px 16px; text-align:center; min-width:80px; border:2px solid ${i === this.localGame.currentPlayer ? 'var(--secondary)' : 'transparent'}; box-shadow: ${i === this.localGame.currentPlayer ? '0 0 20px rgba(6,182,212,0.2)' : 'none'};">
+                            <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; margin:0 auto 4px; font-weight:700; font-size:18px;">${p.name[0]}</div>
+                            <span style="font-size:14px;">${p.name}</span>
+                            <span style="display:block; font-family:'Orbitron', cursive; font-size:18px; color:var(--secondary);">${p.score}</span>
+                            ${i === this.localGame.currentPlayer ? '<span style="font-size:11px; color:var(--secondary);">🎯 دوره</span>' : ''}
                         </div>
                     `).join('')}
                 </div>
-                <div class="game-content">
-                    <h3>دور: ${player.name}</h3>
+                <div class="game-content" style="text-align:center;">
+                    <h3 style="font-family:'Tajawal', sans-serif; font-size:20px; margin-bottom:16px;">دور: ${player.name}</h3>
                     ${this.getLocalGameContent()}
                 </div>
             </div>
@@ -897,67 +846,58 @@ class SJGames {
 
     getLocalGameContent() {
         const game = this.localGame?.game || 'sinojem';
-        switch(game) {
+        const player = this.localGame.players[this.localGame.currentPlayer];
+
+        switch (game) {
             case 'sinojem':
-                return this.getLocalSinojem();
+                const questions = [
+                    { q: 'ما هو عاصمة مصر؟', options: ['القاهرة', 'الإسكندرية', 'الجيزة', 'أسوان'], a: 'القاهرة' },
+                    { q: 'كم عدد الكواكب في المجموعة الشمسية؟', options: ['7', '8', '9', '10'], a: '8' }
+                ];
+                const q = questions[this.localGame.currentPlayer % questions.length];
+                return `
+                    <div class="question-card glass" style="padding:24px;">
+                        <h4 style="font-family:'Tajawal', sans-serif; font-size:20px; margin-bottom:16px;">${q.q}</h4>
+                        <div class="options-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            ${q.options.map(opt => `
+                                <button class="btn btn-outline option-btn" onclick="window.app.localAnswer('${opt}', '${q.a}')">${opt}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
             case 'without-words':
-                return this.getLocalWithoutWords();
+                const words = ['تفاحة', 'سيارة', 'بيت', 'شمس', 'قمر'];
+                const word = words[this.localGame.currentPlayer % words.length];
+                return `
+                    <div class="word-game" style="padding:20px;">
+                        <div style="font-size:48px; margin-bottom:16px;">🎭</div>
+                        <h3 style="font-size:48px; color:var(--secondary);">${word}</h3>
+                        <p style="color:var(--text-secondary);">🗣️ صف الكلمة بدون كلام</p>
+                        <div class="word-actions" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
+                            <button class="btn btn-success" onclick="window.app.localCorrect()">✅ صحيحة</button>
+                            <button class="btn btn-danger" onclick="window.app.localWrong()">❌ خاطئة</button>
+                            <button class="btn btn-warning" onclick="window.app.localSkip()">⏭️ تخطي</button>
+                        </div>
+                    </div>
+                `;
             case 'who-am-i':
-                return this.getLocalWhoAmI();
+                const characters = [
+                    { name: 'أحمد زكي', hint: 'ممثل مصري' },
+                    { name: 'جيف بيزوس', hint: 'رجل أعمال' }
+                ];
+                const char = characters[this.localGame.currentPlayer % characters.length];
+                return `
+                    <div class="whoami-game" style="padding:20px;">
+                        <p style="color:var(--text-secondary); font-size:18px;">${char.hint}</p>
+                        <div class="whoami-input" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
+                            <input type="text" id="local-whoami-guess" placeholder="من أنا؟" style="flex:1; min-width:150px; padding:10px 14px; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); border-radius:var(--radius-md); color:var(--text-primary); outline:none;">
+                            <button class="btn btn-primary" onclick="window.app.localWhoAmI('${char.name}')">تخمين</button>
+                        </div>
+                    </div>
+                `;
             default:
                 return '<p>اختر لعبة</p>';
         }
-    }
-
-    getLocalSinojem() {
-        const questions = [
-            { q: 'ما هو عاصمة مصر؟', options: ['القاهرة', 'الإسكندرية', 'الجيزة', 'أسوان'], a: 'القاهرة' },
-            { q: 'كم عدد الكواكب في المجموعة الشمسية؟', options: ['7', '8', '9', '10'], a: '8' }
-        ];
-        const q = questions[this.localGame.currentPlayer % questions.length];
-        return `
-            <div class="question-card">
-                <h4>${q.q}</h4>
-                <div class="options-grid">
-                    ${q.options.map(opt => `
-                        <button class="btn btn-outline option-btn" onclick="window.app.localAnswer('${opt}', '${q.a}')">${opt}</button>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    getLocalWithoutWords() {
-        const words = ['تفاحة', 'سيارة', 'بيت', 'شمس', 'قمر'];
-        const word = words[this.localGame.currentPlayer % words.length];
-        return `
-            <div class="word-game">
-                <div class="word-display">${word}</div>
-                <p>🗣️ صف الكلمة بدون كلام</p>
-                <div class="word-actions">
-                    <button class="btn btn-success" onclick="window.app.localCorrect()">✅ صحيحة</button>
-                    <button class="btn btn-danger" onclick="window.app.localWrong()">❌ خاطئة</button>
-                    <button class="btn btn-warning" onclick="window.app.localSkip()">⏭️ تخطي</button>
-                </div>
-            </div>
-        `;
-    }
-
-    getLocalWhoAmI() {
-        const characters = [
-            { name: 'أحمد زكي', hint: 'ممثل مصري' },
-            { name: 'جيف بيزوس', hint: 'رجل أعمال' }
-        ];
-        const char = characters[this.localGame.currentPlayer % characters.length];
-        return `
-            <div class="whoami-game">
-                <p>${char.hint}</p>
-                <div class="whoami-input">
-                    <input type="text" id="local-whoami-guess" placeholder="من أنا؟">
-                    <button class="btn btn-primary" onclick="window.app.localWhoAmI('${char.name}')">تخمين</button>
-                </div>
-            </div>
-        `;
     }
 
     localAnswer(answer, correct) {
@@ -1002,10 +942,191 @@ class SJGames {
         this.sound.play('notification');
     }
 
-    // ===== Show Dialogs =====
+    // ===== Profile =====
+    async loadUserProfile() {
+        if (!this.currentUser) return;
+        const avatar = document.getElementById('profile-avatar-img');
+        const name = document.getElementById('profile-name');
+        const email = document.getElementById('profile-email');
+        if (avatar) avatar.src = this.currentUser.photoURL || 'assets/icons/default-avatar.png';
+        if (name) name.textContent = this.currentUser.displayName || 'اللاعب';
+        if (email) email.textContent = this.currentUser.email || '';
+
+        try {
+            const doc = await firebase.firestore().collection('users').doc(this.currentUser.uid).get();
+            const data = doc.data();
+            document.getElementById('stat-games').textContent = data?.stats?.games || 0;
+            document.getElementById('stat-wins').textContent = data?.stats?.wins || 0;
+            document.getElementById('stat-points').textContent = data?.stats?.points || 0;
+        } catch (e) {}
+    }
+
+    // ===== Rooms Loading =====
+    async loadActiveRooms() {
+        try {
+            const snapshot = await firebase.firestore().collection('rooms')
+                .where('isPlaying', '==', false)
+                .orderBy('createdAt', 'desc')
+                .limit(20)
+                .get();
+
+            const containers = document.querySelectorAll('#active-rooms, #all-rooms');
+            containers.forEach(container => {
+                if (!container) return;
+                if (snapshot.empty) {
+                    container.innerHTML = '<p style="color:var(--text-secondary); text-align:center; padding:20px;">لا توجد غرف نشطة حالياً</p>';
+                    return;
+                }
+
+                container.innerHTML = snapshot.docs.map(doc => {
+                    const room = doc.data();
+                    return `
+                        <div class="room-card" onclick="window.app.joinRoom('${doc.id}')">
+                            <div class="room-header">
+                                <span class="room-code">${doc.id}</span>
+                                <span class="badge badge-success">مفتوحة</span>
+                            </div>
+                            <h4 style="font-family:'Tajawal', sans-serif;">${room.name || 'غرفة جديدة'}</h4>
+                            <p>🎮 ${room.game || 'سين وجيم'}</p>
+                            <div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:14px;">
+                                <span>👥 ${room.players ? room.players.length : 0}/${room.maxPlayers || 8}</span>
+                                <span>|</span>
+                                <span>👑 ${room.adminName || 'المشرف'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+        } catch (error) {
+            console.error('Error loading rooms:', error);
+        }
+    }
+
+    // ===== Modals =====
     showCreateRoom() {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay active';
         modal.innerHTML = `
             <div class="modal glass">
-                <button class="modal-close" onclick="this.closest('.modal
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                <h3 style="margin-bottom:16px; font-family:'Tajawal', sans-serif;">🚀 إنشاء غرفة جديدة</h3>
+                <div class="input-group">
+                    <label>اسم الغرفة</label>
+                    <input type="text" id="create-room-name" placeholder="اسم الغرفة" value="غرفة سين وجيم">
+                </div>
+                <div class="input-group">
+                    <label>اللعبة</label>
+                    <select id="create-room-game">
+                        <option value="sinojem">سين وجيم</option>
+                        <option value="without-words">بدون كلام</option>
+                        <option value="who-am-i">من أنا</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>عدد اللاعبين الأقصى</label>
+                    <select id="create-room-max">
+                        <option value="4">4</option>
+                        <option value="6">6</option>
+                        <option value="8" selected>8</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="window.app.createRoomFromModal()">إنشاء الغرفة</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    createRoomFromModal() {
+        const name = document.getElementById('create-room-name').value;
+        const game = document.getElementById('create-room-game').value;
+        const maxPlayers = parseInt(document.getElementById('create-room-max').value);
+        this.createRoom({ name, game, maxPlayers });
+        document.querySelector('.modal-overlay')?.remove();
+    }
+
+    showJoinRoom() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay active';
+        modal.innerHTML = `
+            <div class="modal glass">
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                <h3 style="margin-bottom:16px; font-family:'Tajawal', sans-serif;">🔑 الانضمام إلى غرفة</h3>
+                <div class="input-group">
+                    <label>كود الغرفة</label>
+                    <input type="text" id="join-room-code" placeholder="مثال: ABC123" style="text-transform:uppercase; text-align:center; font-size:24px; letter-spacing:4px;">
+                </div>
+                <button class="btn btn-success btn-block" onclick="window.app.joinRoomFromModal()">انضمام</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    joinRoomFromModal() {
+        const code = document.getElementById('join-room-code').value.toUpperCase().trim();
+        if (!code) {
+            showToast('الرجاء إدخال كود الغرفة', 'error');
+            return;
+        }
+        this.joinRoom(code);
+        document.querySelector('.modal-overlay')?.remove();
+    }
+
+    // ===== Logout =====
+    logout() {
+        if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+            if (this.currentRoom) {
+                this.leaveRoom();
+            }
+            firebase.auth().signOut();
+            this.currentUser = null;
+            this.showPage('auth');
+            const nav = document.querySelector('.bottom-nav');
+            if (nav) nav.style.display = 'none';
+            showToast('تم تسجيل الخروج', 'info');
+        }
+    }
+
+    // ===== Service Worker =====
+    setupSW() {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('✅ SW registered:', reg))
+                    .catch(err => console.log('❌ SW registration failed:', err));
+            });
+        }
+    }
+
+    // ===== Install Prompt =====
+    setupInstallPrompt() {
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // يمكن إظهار زر التثبيت هنا إذا أردت
+        });
+    }
+
+    // ===== Game Data =====
+    loadGameData() {
+        fetch('database/sinojem.json').catch(() => console.log('Using default data'));
+        fetch('database/without-words.json').catch(() => console.log('Using default data'));
+        fetch('database/who-am-i.json').catch(() => console.log('Using default data'));
+    }
+}
+
+// ===== Initialize =====
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new SJGames();
+
+    // Add confetti animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+});
