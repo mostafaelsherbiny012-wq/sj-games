@@ -29,6 +29,7 @@ const ASSETS = [
   '/sj-games/assets/sounds/notification.mp3'
 ];
 
+
 // Install Event
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -76,8 +77,12 @@ self.addEventListener('fetch', event => {
           })
           .catch(() => {
             if (event.request.mode === 'navigate') {
-              return caches.match('/sj-games/index.html');
+              return caches.match('./index.html');
             }
+          });
+      })
+  );
+});
           });
       })
   );
