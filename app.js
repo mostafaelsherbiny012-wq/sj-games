@@ -1,6 +1,5 @@
 // ============================================
 // S&J Games - Main Application
-// Professional Offline-First PWA
 // ============================================
 
 // ===== Sound Manager =====
@@ -82,7 +81,7 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
-// ===== Confetti System =====
+// ===== Confetti =====
 function showConfetti() {
     const colors = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
     const container = document.createElement('div');
@@ -132,7 +131,6 @@ class SJGames {
         this.localGame = null;
         this.currentPage = 'auth';
         this.sound = new SoundManager();
-        this.pages = {};
         this.init();
     }
 
@@ -142,8 +140,18 @@ class SJGames {
         this.checkAuthState();
         this.setupSW();
         this.renderLocalPlayersInput();
-        this.loadGameData();
         this.setupInstallPrompt();
+        this.loadGameData();
+
+        // Add confetti animation style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes confettiFall {
+                0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+                100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     // ===== Setup Event Listeners =====
@@ -178,6 +186,11 @@ class SJGames {
                 if (btn) btn.click();
             }
         });
+
+        // Local player count change
+        document.getElementById('local-player-count')?.addEventListener('change', () => {
+            this.renderLocalPlayersInput();
+        });
     }
 
     // ===== Navigation =====
@@ -192,10 +205,8 @@ class SJGames {
     }
 
     showPage(page) {
-        // Hide all pages
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
-        // Show target page
         const target = document.getElementById(`page-${page}`);
         if (target) {
             target.classList.add('active');
@@ -207,26 +218,33 @@ class SJGames {
 
         this.currentPage = page;
 
-        // Update nav
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
 
-        // Show/hide bottom nav
         const nav = document.querySelector('.bottom-nav');
         if (nav) {
             const hiddenPages = ['auth', 'mode'];
             nav.style.display = hiddenPages.includes(page) ? 'none' : 'flex';
         }
 
-        // Load rooms if on rooms page
         if (page === 'rooms') {
             this.loadActiveRooms();
         }
 
-        // Load profile if on profile page
         if (page === 'profile') {
             this.loadUserProfile();
+        }
+    }
+
+    // ===== Mode Selection =====
+    selectMode(mode) {
+        if (mode === 'online') {
+            this.showPage('home');
+            showToast('🌐 تم اختيار اللعب عن بعد', 'success');
+        } else {
+            this.showPage('local');
+            showToast('📱 تم اختيار اللعب عن قرب', 'success');
         }
     }
 
@@ -234,11 +252,22 @@ class SJGames {
     async googleLogin() {
         try {
             showToast('جاري تسجيل الدخول...', 'info');
-            const result = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            const result = await firebase.auth().signInWithPopup(provider);
             this.currentUser = result.user;
             this.handleAuthSuccess();
         } catch (error) {
-            showToast('فشل تسجيل الدخول: ' + error.message, 'error');
+            console.error('Google login error:', error);
+            if (error.code === 'auth/popup-blocked') {
+                showToast('الرجاء السماح للنوافذ المنبثقة', 'warning');
+            } else if (error.code === 'auth/unauthorized-domain') {
+                showToast('هذا النطاق غير مصرح به في Firebase', 'error');
+            } else if (error.code === 'auth/operation-not-allowed') {
+                showToast('تسجيل الدخول بجوجل غير مفعل في Firebase', 'error');
+            } else {
+                showToast('فشل تسجيل الدخول: ' + error.message, 'error');
+            }
         }
     }
 
@@ -254,7 +283,14 @@ class SJGames {
             this.currentUser = result.user;
             this.handleAuthSuccess();
         } catch (error) {
-            showToast('فشل تسجيل الدخول: ' + error.message, 'error');
+            console.error('Email login error:', error);
+            if (error.code === 'auth/user-not-found') {
+                showToast('المستخدم غير موجود', 'error');
+            } else if (error.code === 'auth/wrong-password') {
+                showToast('كلمة المرور غير صحيحة', 'error');
+            } else {
+                showToast('فشل تسجيل الدخول: ' + error.message, 'error');
+            }
         }
     }
 
@@ -272,7 +308,14 @@ class SJGames {
             this.currentUser = result.user;
             this.handleAuthSuccess();
         } catch (error) {
-            showToast('فشل إنشاء الحساب: ' + error.message, 'error');
+            console.error('Register error:', error);
+            if (error.code === 'auth/email-already-in-use') {
+                showToast('البريد الإلكتروني مستخدم بالفعل', 'error');
+            } else if (error.code === 'auth/weak-password') {
+                showToast('كلمة المرور ضعيفة جداً', 'error');
+            } else {
+                showToast('فشل إنشاء الحساب: ' + error.message, 'error');
+            }
         }
     }
 
@@ -282,6 +325,7 @@ class SJGames {
                 this.currentUser = user;
                 this.handleAuthSuccess();
             } else {
+                this.currentUser = null;
                 this.showPage('auth');
                 const nav = document.querySelector('.bottom-nav');
                 if (nav) nav.style.display = 'none';
@@ -298,24 +342,12 @@ class SJGames {
     }
 
     updateUserUI() {
-        // Update profile
         const avatar = document.getElementById('profile-avatar-img');
         const name = document.getElementById('profile-name');
         const email = document.getElementById('profile-email');
         if (avatar) avatar.src = this.currentUser?.photoURL || 'assets/icons/default-avatar.png';
         if (name) name.textContent = this.currentUser?.displayName || 'اللاعب';
         if (email) email.textContent = this.currentUser?.email || '';
-    }
-
-    // ===== Mode Selection =====
-    selectMode(mode) {
-        if (mode === 'online') {
-            this.showPage('home');
-            showToast('🌐 تم اختيار اللعب عن بعد', 'success');
-        } else {
-            this.showPage('local');
-            showToast('📱 تم اختيار اللعب عن قرب', 'success');
-        }
     }
 
     // ===== Rooms =====
@@ -472,7 +504,6 @@ class SJGames {
         }
 
         this.updatePlayersList();
-        this.updateAdminControls();
     }
 
     updatePlayersList() {
@@ -480,25 +511,15 @@ class SJGames {
         if (!container || !this.roomData || !this.roomData.players) return;
 
         container.innerHTML = this.roomData.players.map(player => `
-            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid ${player.uid === this.currentUser?.uid ? 'var(--primary)' : 'var(--glass-border)'};">
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid ${player.uid === this.currentUser?.uid ? 'var(--primary)' : 'var(--glass-border)'};">
                 <img src="${player.photoURL || 'assets/icons/default-avatar.png'}" 
-                     style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);"
+                     style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);"
                      onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234F46E5%22/%3E%3Ctext x=%2235%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E${player.name?.[0] || 'P'}%3C/text%3E%3C/svg%3E'">
-                <span style="font-weight: 500; flex:1;">${player.name}</span>
-                ${player.uid === this.roomData.adminId ? '<span style="font-size: 11px; padding: 2px 10px; border-radius: 20px; background: var(--warning); color: #1a1a2e; font-weight: 700;">👑 مشرف</span>' : ''}
-                <span style="font-size: 12px; color: var(--text-secondary);">🏆 ${player.score || 0}</span>
+                <span style="font-weight:500; flex:1;">${player.name}</span>
+                ${player.uid === this.roomData.adminId ? '<span style="font-size:11px; padding:2px 10px; border-radius:20px; background:var(--warning); color:#1a1a2e; font-weight:700;">👑 مشرف</span>' : ''}
+                <span style="font-size:12px; color:var(--text-secondary);">🏆 ${player.score || 0}</span>
             </div>
         `).join('');
-    }
-
-    updateAdminControls() {
-        const controls = document.getElementById('admin-controls');
-        if (!controls) return;
-        if (this.isAdmin && this.roomData) {
-            controls.style.display = 'flex';
-        } else {
-            controls.style.display = 'none';
-        }
     }
 
     // ===== Chat =====
@@ -518,9 +539,42 @@ class SJGames {
         try {
             await firebase.database().ref(`rooms/${this.currentRoom}/chat`).push(chatData);
             input.value = '';
+            this.displayChatMessage(chatData);
         } catch (error) {
             showToast('فشل إرسال الرسالة: ' + error.message, 'error');
         }
+    }
+
+    displayChatMessage(data) {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+
+        const isOwn = data.uid === this.currentUser?.uid;
+        const time = new Date(data.timestamp).toLocaleTimeString('ar-EG');
+
+        const div = document.createElement('div');
+        div.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: ${isOwn ? 'flex-end' : 'flex-start'};
+            margin-bottom: 8px;
+            max-width: 85%;
+            align-self: ${isOwn ? 'flex-end' : 'flex-start'};
+        `;
+        div.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+                <img src="${data.photoURL || 'assets/icons/default-avatar.png'}" 
+                     style="width:24px; height:24px; border-radius:50%; object-fit:cover;"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234F46E5%22/%3E%3Ctext x=%2235%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E${data.name?.[0] || 'P'}%3C/text%3E%3C/svg%3E'">
+                <span style="font-size:12px; font-weight:600; color:var(--secondary);">${data.name}</span>
+                <span style="font-size:10px; color:var(--text-muted);">${time}</span>
+            </div>
+            <div style="background:${isOwn ? 'var(--primary)' : 'var(--bg-card)'}; padding:8px 14px; border-radius:12px; ${isOwn ? 'border-bottom-right-radius:4px;' : 'border-bottom-left-radius:4px;'}">
+                <span style="font-size:14px;">${data.message}</span>
+            </div>
+        `;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
     }
 
     // ===== Games =====
@@ -583,24 +637,24 @@ class SJGames {
 
             const q = questions[current];
             area.innerHTML = `
-                <div class="question-container">
-                    <div class="question-progress">
-                        <div class="progress-bar"><div style="width: ${(current / questions.length) * 100}%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 4px;"></div></div>
-                        <span>${current + 1}/${questions.length}</span>
+                <div class="question-container" style="max-width:600px; margin:0 auto;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                        <div style="flex:1; height:4px; background:var(--glass-border); border-radius:4px; overflow:hidden;">
+                            <div style="width:${(current / questions.length) * 100}%; height:100%; background:linear-gradient(90deg, var(--primary), var(--secondary)); border-radius:4px;"></div>
+                        </div>
+                        <span style="font-size:14px; color:var(--text-secondary);">${current + 1}/${questions.length}</span>
                     </div>
-                    <div class="question-card glass">
-                        <h3>${q.q}</h3>
-                        <div class="options-grid">
+                    <div class="question-card glass" style="padding:24px; text-align:center;">
+                        <h3 style="font-family:'Tajawal', sans-serif; font-size:20px; margin-bottom:20px;">${q.q}</h3>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                             ${q.options.map(opt => `
-                                <button class="btn btn-outline option-btn" onclick="window.app.checkAnswer(this, '${opt}', '${q.a}')">
+                                <button class="btn btn-outline option-btn" onclick="window.app.checkAnswer(this, '${opt}', '${q.a}')" style="padding:16px; font-size:16px;">
                                     ${opt}
                                 </button>
                             `).join('')}
                         </div>
                     </div>
-                    <div class="question-score" style="text-align:center; margin-top:16px;">
-                        <span style="font-family: 'Orbitron', cursive; color: var(--secondary);">⭐ ${score}</span>
-                    </div>
+                    <div style="text-align:center; margin-top:16px; font-family:'Orbitron', cursive; color:var(--secondary);">⭐ ${score}</div>
                 </div>
             `;
         };
@@ -646,23 +700,17 @@ class SJGames {
 
             const word = words[current];
             area.innerHTML = `
-                <div class="word-game-container" style="text-align:center; padding:20px;">
-                    <div class="word-card glass" style="padding:32px;">
+                <div style="text-align:center; padding:20px;">
+                    <div class="glass" style="padding:32px;">
                         <div style="font-size:48px; margin-bottom:16px;">🎭</div>
-                        <h3 class="word-display" style="font-size:48px; color:var(--secondary);">${word}</h3>
+                        <h3 style="font-size:48px; color:var(--secondary);">${word}</h3>
                         <p style="color:var(--text-secondary);">🗣️ قم بوصف الكلمة بدون كلام</p>
-                        <div class="word-actions" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
-                            <button class="btn btn-success" onclick="window.app.wordCorrect()">
-                                <i class="fas fa-check"></i> صحيحة
-                            </button>
-                            <button class="btn btn-danger" onclick="window.app.wordWrong()">
-                                <i class="fas fa-times"></i> خاطئة
-                            </button>
-                            <button class="btn btn-warning" onclick="window.app.wordSkip()">
-                                <i class="fas fa-forward"></i> تخطي
-                            </button>
+                        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
+                            <button class="btn btn-success" onclick="window.app.wordCorrect()"><i class="fas fa-check"></i> صحيحة</button>
+                            <button class="btn btn-danger" onclick="window.app.wordWrong()"><i class="fas fa-times"></i> خاطئة</button>
+                            <button class="btn btn-warning" onclick="window.app.wordSkip()"><i class="fas fa-forward"></i> تخطي</button>
                         </div>
-                        <div style="margin-top:16px; font-family: 'Orbitron', cursive; color: var(--secondary);">⭐ ${score}</div>
+                        <div style="margin-top:16px; font-family:'Orbitron', cursive; color:var(--secondary);">⭐ ${score}</div>
                     </div>
                 </div>
             `;
@@ -711,18 +759,16 @@ class SJGames {
 
             const char = characters[current];
             area.innerHTML = `
-                <div class="whoami-container" style="text-align:center; padding:20px; max-width:500px; margin:0 auto;">
-                    <div class="whoami-card glass" style="padding:32px;">
+                <div style="text-align:center; padding:20px; max-width:500px; margin:0 auto;">
+                    <div class="glass" style="padding:32px;">
                         <div style="font-size:48px; margin-bottom:16px;">🕵️</div>
-                        <h3 style="font-family: 'Tajawal', sans-serif; font-size:24px;">من أنا؟</h3>
+                        <h3 style="font-family:'Tajawal', sans-serif; font-size:24px;">من أنا؟</h3>
                         <p style="color:var(--text-secondary); font-size:18px; margin:16px 0;">${char.hint}</p>
-                        <div class="whoami-input" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
                             <input type="text" id="whoami-guess" placeholder="اكتب التخمين..." style="flex:1; min-width:150px; padding:10px 14px; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); border-radius:var(--radius-md); color:var(--text-primary); outline:none;">
-                            <button class="btn btn-primary" onclick="window.app.checkWhoAmI('${char.name}')">
-                                <i class="fas fa-search"></i> تخمين
-                            </button>
+                            <button class="btn btn-primary" onclick="window.app.checkWhoAmI('${char.name}')"><i class="fas fa-search"></i> تخمين</button>
                         </div>
-                        <div style="margin-top:16px; font-family: 'Orbitron', cursive; color: var(--secondary);">⭐ ${score}</div>
+                        <div style="margin-top:16px; font-family:'Orbitron', cursive; color:var(--secondary);">⭐ ${score}</div>
                     </div>
                 </div>
             `;
@@ -755,16 +801,16 @@ class SJGames {
         const grade = percent >= 80 ? 'ممتاز! 🌟' : percent >= 60 ? 'جيد جداً! 👍' : 'حاول مرة أخرى! 💪';
 
         area.innerHTML = `
-            <div class="game-result glass" style="text-align:center; padding:40px 24px; max-width:400px; margin:0 auto;">
-                <div style="font-size:64px; margin-bottom:16px;">${percent >= 80 ? '🏆' : '🎯'}</div>
-                <h2 style="font-family: 'Tajawal', sans-serif; font-size:28px;">${grade}</h2>
-                <p style="color:var(--text-secondary); font-size:18px;">النقاط: ${score} من ${total * 10}</p>
-                <div class="result-progress" style="width:100%; height:6px; background:var(--glass-border); border-radius:4px; margin:16px 0; overflow:hidden;">
-                    <div style="width:${percent}%; height:100%; background:linear-gradient(90deg, var(--primary), var(--secondary)); border-radius:4px;"></div>
+            <div style="text-align:center; padding:40px 24px; max-width:400px; margin:0 auto;">
+                <div class="glass" style="padding:32px;">
+                    <div style="font-size:64px; margin-bottom:16px;">${percent >= 80 ? '🏆' : '🎯'}</div>
+                    <h2 style="font-family:'Tajawal', sans-serif; font-size:28px;">${grade}</h2>
+                    <p style="color:var(--text-secondary); font-size:18px;">النقاط: ${score} من ${total * 10}</p>
+                    <div style="width:100%; height:6px; background:var(--glass-border); border-radius:4px; margin:16px 0; overflow:hidden;">
+                        <div style="width:${percent}%; height:100%; background:linear-gradient(90deg, var(--primary), var(--secondary)); border-radius:4px;"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.app.showPage('home')"><i class="fas fa-home"></i> العودة للرئيسية</button>
                 </div>
-                <button class="btn btn-primary" onclick="window.app.showPage('home')">
-                    <i class="fas fa-home"></i> العودة للرئيسية
-                </button>
             </div>
         `;
 
@@ -825,10 +871,10 @@ class SJGames {
         const player = this.localGame.players[this.localGame.currentPlayer];
 
         area.innerHTML = `
-            <div class="local-game-play" style="width:100%;">
-                <div class="game-players-display" style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-bottom:20px;">
+            <div style="width:100%;">
+                <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-bottom:20px;">
                     ${this.localGame.players.map((p, i) => `
-                        <div class="player-card" style="background:var(--bg-glass); border-radius:var(--radius-md); padding:12px 16px; text-align:center; min-width:80px; border:2px solid ${i === this.localGame.currentPlayer ? 'var(--secondary)' : 'transparent'}; box-shadow: ${i === this.localGame.currentPlayer ? '0 0 20px rgba(6,182,212,0.2)' : 'none'};">
+                        <div style="background:var(--bg-glass); border-radius:var(--radius-md); padding:12px 16px; text-align:center; min-width:80px; border:2px solid ${i === this.localGame.currentPlayer ? 'var(--secondary)' : 'transparent'}; box-shadow: ${i === this.localGame.currentPlayer ? '0 0 20px rgba(6,182,212,0.2)' : 'none'};">
                             <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; margin:0 auto 4px; font-weight:700; font-size:18px;">${p.name[0]}</div>
                             <span style="font-size:14px;">${p.name}</span>
                             <span style="display:block; font-family:'Orbitron', cursive; font-size:18px; color:var(--secondary);">${p.score}</span>
@@ -836,7 +882,7 @@ class SJGames {
                         </div>
                     `).join('')}
                 </div>
-                <div class="game-content" style="text-align:center;">
+                <div style="text-align:center;">
                     <h3 style="font-family:'Tajawal', sans-serif; font-size:20px; margin-bottom:16px;">دور: ${player.name}</h3>
                     ${this.getLocalGameContent()}
                 </div>
@@ -846,7 +892,6 @@ class SJGames {
 
     getLocalGameContent() {
         const game = this.localGame?.game || 'sinojem';
-        const player = this.localGame.players[this.localGame.currentPlayer];
 
         switch (game) {
             case 'sinojem':
@@ -856,9 +901,9 @@ class SJGames {
                 ];
                 const q = questions[this.localGame.currentPlayer % questions.length];
                 return `
-                    <div class="question-card glass" style="padding:24px;">
+                    <div class="glass" style="padding:24px;">
                         <h4 style="font-family:'Tajawal', sans-serif; font-size:20px; margin-bottom:16px;">${q.q}</h4>
-                        <div class="options-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                             ${q.options.map(opt => `
                                 <button class="btn btn-outline option-btn" onclick="window.app.localAnswer('${opt}', '${q.a}')">${opt}</button>
                             `).join('')}
@@ -869,11 +914,11 @@ class SJGames {
                 const words = ['تفاحة', 'سيارة', 'بيت', 'شمس', 'قمر'];
                 const word = words[this.localGame.currentPlayer % words.length];
                 return `
-                    <div class="word-game" style="padding:20px;">
+                    <div style="padding:20px;">
                         <div style="font-size:48px; margin-bottom:16px;">🎭</div>
                         <h3 style="font-size:48px; color:var(--secondary);">${word}</h3>
                         <p style="color:var(--text-secondary);">🗣️ صف الكلمة بدون كلام</p>
-                        <div class="word-actions" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
+                        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
                             <button class="btn btn-success" onclick="window.app.localCorrect()">✅ صحيحة</button>
                             <button class="btn btn-danger" onclick="window.app.localWrong()">❌ خاطئة</button>
                             <button class="btn btn-warning" onclick="window.app.localSkip()">⏭️ تخطي</button>
@@ -887,9 +932,9 @@ class SJGames {
                 ];
                 const char = characters[this.localGame.currentPlayer % characters.length];
                 return `
-                    <div class="whoami-game" style="padding:20px;">
+                    <div style="padding:20px;">
                         <p style="color:var(--text-secondary); font-size:18px;">${char.hint}</p>
-                        <div class="whoami-input" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
+                        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
                             <input type="text" id="local-whoami-guess" placeholder="من أنا؟" style="flex:1; min-width:150px; padding:10px 14px; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); border-radius:var(--radius-md); color:var(--text-primary); outline:none;">
                             <button class="btn btn-primary" onclick="window.app.localWhoAmI('${char.name}')">تخمين</button>
                         </div>
@@ -1104,7 +1149,6 @@ class SJGames {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // يمكن إظهار زر التثبيت هنا إذا أردت
         });
     }
 
@@ -1119,14 +1163,4 @@ class SJGames {
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new SJGames();
-
-    // Add confetti animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
 });
