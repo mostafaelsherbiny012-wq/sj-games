@@ -4,13 +4,13 @@
 
 // 🔥 استبدل هذه البيانات ببيانات مشروعك من Firebase Console
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID",
-    databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyB7x8Y9zA1bC2dE3fG4hI5jK6lM7nO8pQ9rS0tU",
+    authDomain: "sj-games-12345.firebaseapp.com",
+    projectId: "sj-games-12345",
+    storageBucket: "sj-games-12345.appspot.com",
+    messagingSenderId: "123456789012",
+    appId: "1:123456789012:web:abcdef1234567890",
+    databaseURL: "https://sj-games-12345-default-rtdb.firebaseio.com"
 };
 
 // Initialize Firebase
@@ -69,6 +69,16 @@ const FirestoreHelper = {
         }
     },
     
+    async createUserProfile(userId, data) {
+        try {
+            await firestore.collection('users').doc(userId).set(data);
+            return true;
+        } catch (error) {
+            console.error('Error creating user profile:', error);
+            return false;
+        }
+    },
+    
     async getRoom(roomId) {
         try {
             const doc = await firestore.collection('rooms').doc(roomId).get();
@@ -107,6 +117,46 @@ const FirestoreHelper = {
             console.error('Error deleting room:', error);
             return false;
         }
+    },
+    
+    async getActiveRooms(limit = 20) {
+        try {
+            const snapshot = await firestore.collection('rooms')
+                .where('isPlaying', '==', false)
+                .orderBy('createdAt', 'desc')
+                .limit(limit)
+                .get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error('Error getting active rooms:', error);
+            return [];
+        }
+    },
+    
+    async addPlayerToRoom(roomId, player) {
+        try {
+            const room = await this.getRoom(roomId);
+            if (!room) return false;
+            const players = [...(room.players || []), player];
+            await this.updateRoom(roomId, { players });
+            return true;
+        } catch (error) {
+            console.error('Error adding player to room:', error);
+            return false;
+        }
+    },
+    
+    async removePlayerFromRoom(roomId, playerId) {
+        try {
+            const room = await this.getRoom(roomId);
+            if (!room) return false;
+            const players = (room.players || []).filter(p => p.uid !== playerId);
+            await this.updateRoom(roomId, { players });
+            return true;
+        } catch (error) {
+            console.error('Error removing player from room:', error);
+            return false;
+        }
     }
 };
 
@@ -125,6 +175,43 @@ const RealtimeHelper = {
     
     listenMessages(roomId, callback) {
         const ref = database.ref(`rooms/${roomId}/chat`);
+        ref.on('child_added', (snapshot) => {
+            callback({ id: snapshot.key, ...snapshot.val() });
+        });
+        return () => ref.off();
+    },
+    
+    setTyping(roomId, userId, name) {
+        const ref = database.ref(`rooms/${roomId}/typing/${userId}`);
+        ref.set({ name, timestamp: Date.now() });
+    },
+    
+    removeTyping(roomId, userId) {
+        const ref = database.ref(`rooms/${roomId}/typing/${userId}`);
+        ref.remove();
+    },
+    
+    listenTyping(roomId, callback) {
+        const ref = database.ref(`rooms/${roomId}/typing`);
+        ref.on('value', (snapshot) => {
+            callback(snapshot.val() || {});
+        });
+        return () => ref.off();
+    },
+    
+    async submitAnswer(roomId, answer) {
+        try {
+            const ref = database.ref(`rooms/${roomId}/answers`);
+            await ref.push(answer);
+            return true;
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            return false;
+        }
+    },
+    
+    listenAnswers(roomId, callback) {
+        const ref = database.ref(`rooms/${roomId}/answers`);
         ref.on('child_added', (snapshot) => {
             callback({ id: snapshot.key, ...snapshot.val() });
         });
@@ -148,10 +235,36 @@ const StorageHelper = {
     async uploadAvatar(userId, file) {
         const path = `avatars/${userId}/${Date.now()}_${file.name}`;
         return this.uploadImage(path, file);
+    },
+    
+    async uploadRoomImage(roomId, file) {
+        const path = `room_images/${roomId}/${Date.now()}_${file.name}`;
+        return this.uploadImage(path, file);
+    },
+    
+    async deleteFile(path) {
+        try {
+            await storage.ref(path).delete();
+            return true;
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            return false;
+        }
+    },
+    
+    async getFileUrl(path) {
+        try {
+            return await storage.ref(path).getDownloadURL();
+        } catch (error) {
+            console.error('Error getting file URL:', error);
+            return null;
+        }
     }
 };
 
+// ============================================
 // Export for use in app.js
+// ============================================
 window.firebaseApp = firebase;
 window.firebaseAuth = auth;
 window.firebaseFirestore = firestore;
