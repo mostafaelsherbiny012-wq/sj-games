@@ -6,23 +6,10 @@ const ASSETS = [
   '/sj-games/app.js',
   '/sj-games/firebase.js',
   '/sj-games/manifest.json',
-  '/sj-games/assets/icons/icon-48.png',
-  '/sj-games/assets/icons/icon-72.png',
-  '/sj-games/assets/icons/icon-96.png',
-  '/sj-games/assets/icons/icon-128.png',
+
   '/sj-games/assets/icons/icon-144.png',
-  '/sj-games/assets/icons/icon-152.png',
   '/sj-games/assets/icons/icon-192.png',
-  '/sj-games/assets/icons/icon-256.png',
-  '/sj-games/assets/icons/icon-384.png',
-  '/sj-games/assets/icons/icon-512.png',
-  '/sj-games/assets/icons/favicon.ico',
-  '/sj-games/assets/icons/favicon-32.png',
-  '/sj-games/assets/icons/favicon-16.png',
-  '/sj-games/assets/icons/apple-touch-icon.png',
-  '/sj-games/assets/icons/maskable-icon.png',
-  '/sj-games/assets/icons/logo.svg',
-  '/sj-games/assets/sounds/win.mp3'
+  '/sj-games/assets/icons/icon-512.png'
 ];
 
 // Install Event
