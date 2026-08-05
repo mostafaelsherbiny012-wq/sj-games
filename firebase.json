@@ -1,9 +1,9 @@
 {
-  "apiKey": "YOUR_API_KEY",
-  "authDomain": "YOUR_PROJECT.firebaseapp.com",
-  "projectId": "YOUR_PROJECT_ID",
-  "storageBucket": "YOUR_PROJECT.appspot.com",
-  "messagingSenderId": "YOUR_SENDER_ID",
-  "appId": "YOUR_APP_ID",
-  "databaseURL": "https://YOUR_PROJECT-default-rtdb.firebaseio.com"
+  "apiKey": "AIzaSyB7x8Y9zA1bC2dE3fG4hI5jK6lM7nO8pQ9rS0tU",
+  "authDomain": "sj-games-12345.firebaseapp.com",
+  "projectId": "sj-games-12345",
+  "storageBucket": "sj-games-12345.appspot.com",
+  "messagingSenderId": "123456789012",
+  "appId": "1:123456789012:web:abcdef1234567890",
+  "databaseURL": "https://sj-games-12345-default-rtdb.firebaseio.com"
 }
