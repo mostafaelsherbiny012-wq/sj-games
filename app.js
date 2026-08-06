@@ -181,8 +181,8 @@ setupEventListeners() {
 
                 target.textContent =
                     form.style.display === 'none'
-                    ? 'إنشاء حساب'
-                    : 'إلغاء';
+                        ? 'إنشاء حساب'
+                        : 'إلغاء';
             }
         }
 
@@ -192,21 +192,29 @@ setupEventListeners() {
 
     });
 
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && document.activeElement?.classList.contains('chat-input-field')) {
-                    this.sendMessage();
-                }
-                if (e.key === 'Enter' && document.activeElement?.id === 'whoami-guess') {
-                    const btn = document.querySelector('#whoami-guess + .btn');
-                    if (btn) btn.click();
-                }
-            });
+    document.addEventListener('keydown', (e) => {
 
-            document.getElementById('local-player-count')?.addEventListener('change', () => {
-                this.renderLocalPlayersInput();
-            });
+        if (
+            e.key === 'Enter' &&
+            document.activeElement?.classList.contains('chat-input-field')
+        ) {
+            this.sendMessage();
         }
 
+        if (
+            e.key === 'Enter' &&
+            document.activeElement?.id === 'whoami-guess'
+        ) {
+            const btn = document.querySelector('#whoami-guess + .btn');
+            if (btn) btn.click();
+        }
+
+    });
+
+    document.getElementById('local-player-count')?.addEventListener('change', () => {
+        this.renderLocalPlayersInput();
+    });
+}
         // ===== Navigation =====
         setupNavigation() {
             document.querySelectorAll('.nav-item').forEach(item => {
