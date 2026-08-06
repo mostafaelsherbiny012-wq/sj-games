@@ -152,16 +152,18 @@ if (typeof SJGames === 'undefined') {
 
 // ===== Event Listeners =====
 setupEventListeners() {
+   
     console.log("✅ Event listeners started");
 
     document.addEventListener('click', (e) => {
 
         const target = e.target;
 
-        if (target.id === 'google-login-btn') {
-            this.googleLogin();
-        }
-
+   if (target.id === 'google-login-btn') {
+    alert("تم الضغط على الزر");
+    console.log("Google button clicked");
+    this.googleLogin();
+}
         if (target.id === 'login-btn') {
             this.emailLogin();
         }
