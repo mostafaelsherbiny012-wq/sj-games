@@ -151,7 +151,10 @@ if (typeof SJGames === 'undefined') {
         }
 
         // ===== Event Listeners =====
-        setupEventListeners() {
+      setupEventListeners() {
+    console.log("✅ Event listeners started");
+
+    document.addEventListener('click', (e) => {
             document.addEventListener('click', (e) => {
                 if (e.target.id === 'google-login-btn') this.googleLogin();
                 if (e.target.id === 'login-btn') this.emailLogin();
