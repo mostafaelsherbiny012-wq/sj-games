@@ -332,7 +332,7 @@ if (typeof SJGames === 'undefined') {
             const avatar = document.getElementById('profile-avatar-img');
             const name = document.getElementById('profile-name');
             const email = document.getElementById('profile-email');
-            if (avatar) avatar.src = this.currentUser?.photoURL || 'assets/images/default-avatar.png';
+            if (avatar) avatar.src = this.currentUser?.photoURL || '';
             if (name) name.textContent = this.currentUser?.displayName || 'اللاعب';
             if (email) email.textContent = this.currentUser?.email || '';
         }
@@ -499,7 +499,7 @@ if (typeof SJGames === 'undefined') {
 
             container.innerHTML = this.roomData.players.map(player => `
                 <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid ${player.uid === this.currentUser?.uid ? 'var(--primary)' : 'var(--glass-border)'};">
-                    <img src="${player.photoURL || 'assets/images/default-avatar.png'}" 
+                  src="${player.photoURL || ''}" 
                          style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);"
                          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234F46E5%22/%3E%3Ctext x=%2235%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E${player.name?.[0] || 'P'}%3C/text%3E%3C/svg%3E'">
                     <span style="font-weight:500; flex:1;">${player.name}</span>
@@ -550,7 +550,7 @@ if (typeof SJGames === 'undefined') {
             `;
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-                    <img src="${data.photoURL || 'assets/images/default-avatar.png'}" 
+                   src="${data.photoURL || ''}" 
                          style="width:24px; height:24px; border-radius:50%; object-fit:cover;"
                          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234F46E5%22/%3E%3Ctext x=%2235%22 y=%2265%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E${data.name?.[0] || 'P'}%3C/text%3E%3C/svg%3E'">
                     <span style="font-size:12px; font-weight:600; color:var(--secondary);">${data.name}</span>
