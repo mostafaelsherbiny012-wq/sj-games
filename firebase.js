@@ -2,177 +2,180 @@
 // Firebase Configuration - S&J Games
 // ============================================
 
-// 🔥 تأكد من استبدال هذه البيانات ببيانات مشروعك
-if (typeof firebaseConfig === 'undefined') {
-    const firebaseConfig = {
-        apiKey: "AIzaSyB7x8Y9zA1bC2dE3fG4hI5jK6lM7nO8pQ9rS0tU",
-        authDomain: "sj-games-12345.firebaseapp.com",
-        projectId: "sj-games-12345",
-        storageBucket: "sj-games-12345.appspot.com",
-        messagingSenderId: "123456789012",
-        appId: "1:123456789012:web:abcdef1234567890",
-        databaseURL: "https://sj-games-12345-default-rtdb.firebaseio.com"
-    };
+// بيانات مشروع Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyD51re4yqFRQVJlsegem74PlA4zMiiDaow",
+  authDomain: "sj-games-86487.firebaseapp.com",
+  projectId: "sj-games-86487",
+  storageBucket: "sj-games-86487.firebasestorage.app",
+  messagingSenderId: "725268812733",
+  appId: "1:725268812733:web:530512bc27bcf31736f8d4",
+  measurementId: "G-JVGHG6N63L"
+};
 
-    // Initialize Firebase
+// تشغيل Firebase مرة واحدة فقط
+if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Initialize services
+// الخدمات
 const auth = firebase.auth();
 const firestore = firebase.firestore();
 const storage = firebase.storage();
-const database = firebase.database();
 
-// Enable offline persistence
+// تشغيل العمل بدون نت
 firestore.enablePersistence({ synchronizeTabs: true })
-    .then(() => console.log('✅ Firestore persistence enabled'))
-    .catch(err => console.warn('⚠️ Firestore persistence error:', err));
-
-console.log('🔥 Firebase initialized successfully!');
+.then(() => {
+    console.log("✅ Firestore Offline Enabled");
+})
+.catch((err) => {
+    console.log("⚠️ Offline Error:", err.code);
+});
 
 // ============================================
-// Firebase Helper Functions
+// Authentication
 // ============================================
 
 const AuthHelper = {
-    getCurrentUser: () => auth.currentUser,
-    isAuthenticated: () => !!auth.currentUser,
-    getUserId: () => auth.currentUser?.uid || null,
-    getUserName: () => auth.currentUser?.displayName || 'مستخدم',
-    getUserPhoto: () => auth.currentUser?.photoURL || null,
-    getUserEmail: () => auth.currentUser?.email || null
+
+    getCurrentUser() {
+        return auth.currentUser;
+    },
+
+    isAuthenticated() {
+        return !!auth.currentUser;
+    },
+
+    async signInGoogle() {
+
+        try {
+
+            const provider = new firebase.auth.GoogleAuthProvider();
+
+            const result = await auth.signInWithPopup(provider);
+
+            const user = result.user;
+
+            await firestore.collection("users").doc(user.uid).set({
+
+                uid: user.uid,
+                name: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL || "",
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+
+            }, { merge: true });
+
+            return user;
+
+        } catch (e) {
+
+            console.error(e);
+            throw e;
+
+        }
+
+    },
+
+    async signOut() {
+        await auth.signOut();
+    }
+
 };
+
+// ============================================
+// Firestore
+// ============================================
 
 const FirestoreHelper = {
-    async getUserProfile(userId) {
-        try {
-            const doc = await firestore.collection('users').doc(userId).get();
-            return doc.exists ? doc.data() : null;
-        } catch (error) {
-            console.error('Error getting user profile:', error);
-            return null;
-        }
+
+    async createUserProfile(uid, data) {
+
+        return firestore.collection("users").doc(uid).set(data, {
+            merge: true
+        });
+
     },
-    
-    async updateUserProfile(userId, data) {
-        try {
-            await firestore.collection('users').doc(userId).update(data);
-            return true;
-        } catch (error) {
-            console.error('Error updating user profile:', error);
-            return false;
+
+    async getUserProfile(uid) {
+
+        const doc = await firestore.collection("users").doc(uid).get();
+
+        if (doc.exists) {
+            return doc.data();
         }
+
+        return null;
+
     },
-    
-    async createUserProfile(userId, data) {
-        try {
-            await firestore.collection('users').doc(userId).set(data);
-            return true;
-        } catch (error) {
-            console.error('Error creating user profile:', error);
-            return false;
-        }
+
+    async updateUserProfile(uid, data) {
+
+        return firestore.collection("users").doc(uid).update(data);
+
     },
-    
-    async getRoom(roomId) {
-        try {
-            const doc = await firestore.collection('rooms').doc(roomId).get();
-            return doc.exists ? { id: doc.id, ...doc.data() } : null;
-        } catch (error) {
-            console.error('Error getting room:', error);
-            return null;
-        }
-    },
-    
+
     async createRoom(roomId, data) {
-        try {
-            await firestore.collection('rooms').doc(roomId).set(data);
-            return true;
-        } catch (error) {
-            console.error('Error creating room:', error);
-            return false;
-        }
+
+        return firestore.collection("rooms").doc(roomId).set(data);
+
     },
-    
+
+    async getRoom(roomId) {
+
+        const doc = await firestore.collection("rooms").doc(roomId).get();
+
+        if (doc.exists) {
+            return doc.data();
+        }
+
+        return null;
+
+    },
+
     async updateRoom(roomId, data) {
-        try {
-            await firestore.collection('rooms').doc(roomId).update(data);
-            return true;
-        } catch (error) {
-            console.error('Error updating room:', error);
-            return false;
-        }
+
+        return firestore.collection("rooms").doc(roomId).update(data);
+
     },
-    
+
     async deleteRoom(roomId) {
-        try {
-            await firestore.collection('rooms').doc(roomId).delete();
-            return true;
-        } catch (error) {
-            console.error('Error deleting room:', error);
-            return false;
-        }
-    },
-    
-    async getActiveRooms(limit = 20) {
-        try {
-            const snapshot = await firestore.collection('rooms')
-                .where('isPlaying', '==', false)
-                .orderBy('createdAt', 'desc')
-                .limit(limit)
-                .get();
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } catch (error) {
-            console.error('Error getting active rooms:', error);
-            return [];
-        }
+
+        return firestore.collection("rooms").doc(roomId).delete();
+
     }
+
 };
 
-const RealtimeHelper = {
-    async sendMessage(roomId, message) {
-        try {
-            const ref = database.ref(`rooms/${roomId}/chat`);
-            await ref.push(message);
-            return true;
-        } catch (error) {
-            console.error('Error sending message:', error);
-            return false;
-        }
-    },
-    
-    listenMessages(roomId, callback) {
-        const ref = database.ref(`rooms/${roomId}/chat`);
-        ref.on('child_added', (snapshot) => {
-            callback({ id: snapshot.key, ...snapshot.val() });
-        });
-        return () => ref.off();
-    }
-};
+// ============================================
+// Storage
+// ============================================
 
 const StorageHelper = {
+
     async uploadImage(path, file) {
-        try {
-            const ref = storage.ref(path);
-            await ref.put(file);
-            return await ref.getDownloadURL();
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            return null;
-        }
+
+        const ref = storage.ref(path);
+
+        await ref.put(file);
+
+        return await ref.getDownloadURL();
+
     }
+
 };
 
+// ============================================
 // Export
+// ============================================
+
 window.firebaseApp = firebase;
 window.firebaseAuth = auth;
 window.firebaseFirestore = firestore;
 window.firebaseStorage = storage;
-window.firebaseDatabase = database;
+
 window.AuthHelper = AuthHelper;
 window.FirestoreHelper = FirestoreHelper;
-window.RealtimeHelper = RealtimeHelper;
 window.StorageHelper = StorageHelper;
 
-console.log('✅ Firebase helpers loaded successfully!');
+console.log("🔥 Firebase Ready");
