@@ -267,7 +267,7 @@ setupEventListeners() {
 
         // ===== Authentication =====
         async googleLogin() {
-            alert("تم الضغط على زر جوجل");
+       alert("Google Login Started");
             try {
                 showToast('جاري تسجيل الدخول...', 'info');
                 const provider = new firebase.auth.GoogleAuthProvider();
