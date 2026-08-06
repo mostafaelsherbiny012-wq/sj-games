@@ -192,17 +192,6 @@ setupEventListeners() {
 
     });
 
-    document.addEventListener('keydown', (e) => {
-        if (
-            e.key === 'Enter' &&
-            document.activeElement?.classList.contains('chat-input-field')
-        ) {
-            this.sendMessage();
-        }
-    });
-}
-         
-
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && document.activeElement?.classList.contains('chat-input-field')) {
                     this.sendMessage();
