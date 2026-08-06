@@ -201,11 +201,7 @@ setupEventListeners() {
         }
     });
 }
-            document.addEventListener('click', (e) => {
-                if (e.target.closest('.btn')) {
-                    this.sound.play('click');
-                }
-            });
+         
 
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && document.activeElement?.classList.contains('chat-input-field')) {
