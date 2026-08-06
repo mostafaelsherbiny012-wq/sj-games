@@ -253,7 +253,9 @@ if (typeof SJGames === 'undefined') {
                 } else if (error.code === 'auth/operation-not-allowed') {
                     showToast('تسجيل الدخول بجوجل غير مفعل في Firebase', 'error');
                 } else {
-                    showToast('فشل تسجيل الدخول: ' + error.message, 'error');
+                   alert(error.code + "\n\n" + error.message);
+console.error(error);
+showToast('فشل تسجيل الدخول', 'error');
                 }
             }
         }
