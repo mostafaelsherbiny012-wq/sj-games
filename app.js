@@ -150,23 +150,57 @@ if (typeof SJGames === 'undefined') {
             this.loadGameData();
         }
 
-        // ===== Event Listeners =====
-      setupEventListeners() {
+// ===== Event Listeners =====
+setupEventListeners() {
     console.log("✅ Event listeners started");
 
     document.addEventListener('click', (e) => {
-            document.addEventListener('click', (e) => {
-                if (e.target.id === 'google-login-btn') this.googleLogin();
-                if (e.target.id === 'login-btn') this.emailLogin();
-                if (e.target.id === 'register-btn') this.emailRegister();
-                if (e.target.id === 'show-register') {
-                    e.preventDefault();
-                    const form = document.getElementById('register-form');
-                    form.style.display = form.style.display === 'none' ? 'block' : 'none';
-                    e.target.textContent = form.style.display === 'none' ? 'إنشاء حساب' : 'إلغاء';
-                }
-            });
 
+        const target = e.target;
+
+        if (target.id === 'google-login-btn') {
+            this.googleLogin();
+        }
+
+        if (target.id === 'login-btn') {
+            this.emailLogin();
+        }
+
+        if (target.id === 'register-btn') {
+            this.emailRegister();
+        }
+
+        if (target.id === 'show-register') {
+            e.preventDefault();
+
+            const form = document.getElementById('register-form');
+
+            if (form) {
+                form.style.display =
+                    form.style.display === 'none' ? 'block' : 'none';
+
+                target.textContent =
+                    form.style.display === 'none'
+                    ? 'إنشاء حساب'
+                    : 'إلغاء';
+            }
+        }
+
+        if (target.closest('.btn')) {
+            this.sound.play('click');
+        }
+
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (
+            e.key === 'Enter' &&
+            document.activeElement?.classList.contains('chat-input-field')
+        ) {
+            this.sendMessage();
+        }
+    });
+}
             document.addEventListener('click', (e) => {
                 if (e.target.closest('.btn')) {
                     this.sound.play('click');
