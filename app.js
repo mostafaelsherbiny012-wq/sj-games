@@ -237,6 +237,7 @@ if (typeof SJGames === 'undefined') {
 
         // ===== Authentication =====
         async googleLogin() {
+            alert("تم الضغط على زر جوجل");
             try {
                 showToast('جاري تسجيل الدخول...', 'info');
                 const provider = new firebase.auth.GoogleAuthProvider();
